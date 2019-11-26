@@ -23,7 +23,6 @@ import styles from './styles';
 import log from '../../utils/log';
 import I18n from '../../i18n';
 import SortDropdown from './SortDropdown';
-import ServerDropdown from './ServerDropdown';
 import {
 	toggleSortDropdown as toggleSortDropdownAction,
 	openSearchHeader as openSearchHeaderAction,
@@ -126,7 +125,6 @@ class RoomsListView extends React.Component {
 		server: PropTypes.string,
 		searchText: PropTypes.string,
 		loadingServer: PropTypes.bool,
-		showServerDropdown: PropTypes.bool,
 		showSortDropdown: PropTypes.bool,
 		sortBy: PropTypes.string,
 		groupByType: PropTypes.bool,
@@ -773,7 +771,6 @@ class RoomsListView extends React.Component {
 			groupByType,
 			showFavorites,
 			showUnread,
-			showServerDropdown,
 			showSortDropdown
 		} = this.props;
 
@@ -794,7 +791,6 @@ class RoomsListView extends React.Component {
 						showUnread={showUnread}
 					/>
 				) : null}
-				{showServerDropdown ? <ServerDropdown /> : null}
 			</SafeAreaView>
 		);
 	};
