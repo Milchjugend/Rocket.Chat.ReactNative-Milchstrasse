@@ -354,5 +354,8 @@ export default {
 	You: 'Vous',
 	You_will_not_be_able_to_recover_this_message: 'Vous ne serez pas en mesure de récupérer ce message!',
 	Community_Profile: 'My Planet',
-	Chat_Profile_Image: 'Chat Profil Image'
+	Chat_Profile_Image: 'Chat Profil Image',
+	Connect_to_milchstrasse: 'Connect to Milchstrasse',
+	Landing_title: 'Milchstrasse🌈Chat',
+	Landing_subtitle: 'Ein Universum voll mit Queers'
 };
