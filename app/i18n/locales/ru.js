@@ -307,6 +307,7 @@ export default {
 	you: 'вы',
 	Your_server: 'Ваш сервер',
 	Community_Profile: 'My Planet',
+	Agenda: 'Agenda',
 	Chat_Profile_Image: 'Chat Profil Image',
 	Connect_to_milchstrasse: 'Connect to Milchstrasse',
 	Landing_title: 'Milchstrasse🌈Chat',
