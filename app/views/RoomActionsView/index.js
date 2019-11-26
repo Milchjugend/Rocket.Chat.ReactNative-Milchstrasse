@@ -12,6 +12,7 @@ import sharedStyles from '../Styles';
 import Avatar from '../../containers/Avatar';
 import Status from '../../containers/Status';
 import Touch from '../../utils/touch';
+import openLink from '../../utils/openLink';
 import RocketChat from '../../lib/rocketchat';
 import log from '../../utils/log';
 import RoomTypeIcon from '../../containers/RoomTypeIcon';
@@ -107,13 +108,20 @@ class RoomActionsView extends React.Component {
 		}
 	}
 
+
 	onPressTouchable = (item) => {
-		if (item.route) {
-			const { navigation } = this.props;
-			navigation.navigate(item.route, item.params);
-		}
-		if (item.event) {
-			return item.event();
+		const { room } = this.state;
+		const { name, t } = room;
+		if (t === 'd') {
+			openLink(`https://app.milchjugend.ch/members/${ name }/`);
+		} else {
+			if (item.route) {
+				const { navigation } = this.props;
+				navigation.navigate(item.route, item.params);
+			}
+			if (item.event) {
+				return item.event();
+			}
 		}
 	}
 
