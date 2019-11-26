@@ -12,7 +12,6 @@ import equal from 'deep-equal';
 import sharedStyles from './Styles';
 import scrollPersistTaps from '../utils/scrollPersistTaps';
 import random from '../utils/random';
-import Button from '../containers/Button';
 import I18n from '../i18n';
 import { LegalButton } from '../containers/HeaderButton';
 import StatusBar from '../containers/StatusBar';
@@ -371,6 +370,7 @@ class LoginSignupView extends React.Component {
 				</>
 			);
 		}
+		this.onPressCustomOAuth(service);
 		return (
 			<RectButton key={service.name} onPress={onPress} style={styles.serviceButton}>
 				<View style={styles.serviceButtonContainer}>
@@ -411,19 +411,6 @@ class LoginSignupView extends React.Component {
 				<StatusBar />
 				<SafeAreaView testID='welcome-view' forceInset={{ vertical: 'never' }} style={styles.safeArea}>
 					{this.renderServices()}
-					{this.renderServicesSeparator()}
-					<Button
-						title={<Text>{I18n.t('Login_with')} <Text style={{ ...sharedStyles.textBold }}>{I18n.t('email')}</Text></Text>}
-						type='primary'
-						onPress={() => this.login()}
-						testID='welcome-view-login'
-					/>
-					<Button
-						title={I18n.t('Create_account')}
-						type='secondary'
-						onPress={() => this.register()}
-						testID='welcome-view-register'
-					/>
 				</SafeAreaView>
 			</ScrollView>
 		);

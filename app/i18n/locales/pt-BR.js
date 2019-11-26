@@ -391,5 +391,8 @@ export default {
 	You_need_to_access_at_least_one_RocketChat_server_to_share_something: 'Você precisa acessar ao menos um servidor Rocket.Chat para compartilhar.',
 	You_will_not_be_able_to_recover_this_message: 'Você não será capaz de recuperar essa mensagem!',
 	Community_Profile: 'My Planet',
-	Chat_Profile_Image: 'Chat Profil Image'
+	Chat_Profile_Image: 'Chat Profil Image',
+	Connect_to_milchstrasse: 'Connect to Milchstrasse',
+	Landing_title: 'Milchstrasse🌈Chat',
+	Landing_subtitle: 'Ein Universum voll mit Queers'
 };
