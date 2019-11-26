@@ -443,5 +443,7 @@ export default {
 	Chat_Profile_Image: 'Chat Profil Image',
 	Connect_to_milchstrasse: 'Connect to Milchstrasse',
 	Landing_title: 'Milchstrasse🌈Chat',
-	Landing_subtitle: 'Ein Universum voll mit Queers'
+	Landing_subtitle: 'Ein Universum voll mit Queers',
+	Agenda: 'Agenda',
+	Community: 'Community'
 };

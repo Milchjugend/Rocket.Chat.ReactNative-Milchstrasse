@@ -403,5 +403,7 @@ export default {
 	Chat_Profile_Image: 'Chat-Profilbild',
 	Connect_to_milchstrasse: 'Mit Milchstrasse verbinden',
 	Landing_title: 'Milchstrasse🌈Chat',
-	Landing_subtitle: 'Ein Universum voll mit Queers'
+	Landing_subtitle: 'Ein Universum voll mit Queers',
+	Agenda: 'Agenda',
+	Community: 'Community'
 };

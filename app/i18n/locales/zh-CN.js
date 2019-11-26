@@ -348,6 +348,8 @@ export default {
 	you: '你',
 	Your_server: '你的服务器',
 	Community_Profile: 'My Planet',
+	Agenda: 'Agenda',
+	Community: 'Community',
 	Chat_Profile_Image: 'Chat Profil Image',
 	Connect_to_milchstrasse: 'Connect to Milchstrasse',
 	Landing_title: 'Milchstrasse🌈Chat',
