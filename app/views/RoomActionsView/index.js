@@ -12,7 +12,6 @@ import sharedStyles from '../Styles';
 import Avatar from '../../containers/Avatar';
 import Status from '../../containers/Status';
 import Touch from '../../utils/touch';
-import openLink from '../../utils/openLink';
 import RocketChat from '../../lib/rocketchat';
 import log from '../../utils/log';
 import RoomTypeIcon from '../../containers/RoomTypeIcon';
@@ -113,14 +112,14 @@ class RoomActionsView extends React.Component {
 		const { room } = this.state;
 		const { name, t, topic } = room;
 		if (item.route) {
+			const { navigation } = this.props;
 			if (item.route === 'RoomInfoView') {
 				if (t === 'd') {
-					openLink(`https://app.milchjugend.ch/members/${ name }/`);
+					navigation.navigate('WebsiteView', { t, title: name, url: `https://app.milchjugend.ch/members/${ name }/` });
 				} else if (topic.includes('Event Kanal')) {
-					openLink(`https://app.milchjugend.ch/event/${ name }/`);
+					navigation.navigate('WebsiteView', { t, title: name, url: `https://app.milchjugend.ch/event/${ name }/` });
 				}
 			} else {
-				const { navigation } = this.props;
 				navigation.navigate(item.route, item.params);
 			}
 		}

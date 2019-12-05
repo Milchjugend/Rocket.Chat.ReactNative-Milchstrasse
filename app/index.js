@@ -128,6 +128,9 @@ const ChatsStack = createStackNavigator({
 	},
 	NotificationPrefView: {
 		getScreen: () => require('./views/NotificationPreferencesView').default
+	},
+	WebsiteView: {
+		getScreen: () => require('./views/WebsiteView').default
 	}
 }, {
 	defaultNavigationOptions: defaultHeader
@@ -160,6 +163,30 @@ ProfileStack.navigationOptions = ({ navigation }) => {
 		drawerLockMode
 	};
 };
+
+const AgendaStack = createStackNavigator({
+	AgendaView: {
+		getScreen: () => require('./views/AgendaView').default
+	}
+}, {
+	defaultNavigationOptions: defaultHeader
+});
+
+const CommunityStack = createStackNavigator({
+	CommunityView: {
+		getScreen: () => require('./views/CommunityView').default
+	}
+}, {
+	defaultNavigationOptions: defaultHeader
+});
+
+const CommunityProfileStack = createStackNavigator({
+	CommunityProfileView: {
+		getScreen: () => require('./views/CommunityProfileView').default
+	}
+}, {
+	defaultNavigationOptions: defaultHeader
+});
 
 const SettingsStack = createStackNavigator({
 	SettingsView: {
@@ -194,7 +221,10 @@ const ChatsDrawer = createDrawerNavigator({
 	ChatsStack,
 	ProfileStack,
 	SettingsStack,
-	AdminPanelStack
+	AdminPanelStack,
+	AgendaStack,
+	CommunityStack,
+	CommunityProfileStack
 }, {
 	contentComponent: Sidebar,
 	overlayColor: '#00000090'

@@ -21,7 +21,6 @@ import SidebarItem from './SidebarItem';
 import { COLOR_TEXT } from '../../constants/colors';
 import database from '../../lib/database';
 import { animateNextTransition } from '../../utils/layoutAnimation';
-import openLink from '../../utils/openLink';
 
 const keyExtractor = item => item.id;
 
@@ -151,15 +150,18 @@ class Sidebar extends Component {
 	}
 
 	onPressCommunityProfile = () => {
-		openLink('https://app.milchjugend.ch/members/me');
+		const { navigation } = this.props;
+		navigation.navigate('CommunityProfileView', { title: I18n.t('Community_Profile') });
 	}
 
 	onPressCommunity = () => {
-		openLink('https://app.milchjugend.ch/members/');
+		const { navigation } = this.props;
+		navigation.navigate('CommunityView', { title: I18n.t('Community') });
 	}
 
 	onPressAgenda = () => {
-		openLink('https://app.milchjugend.ch/events');
+		const { navigation } = this.props;
+		navigation.navigate('AgendaView', { title: I18n.t('Agenda') });
 	}
 
 	sidebarNavigate = (route) => {
@@ -210,18 +212,21 @@ class Sidebar extends Component {
 					left={<CustomIcon name='discover' size={20} color={COLOR_TEXT} />}
 					onPress={this.onPressCommunityProfile}
 					testID='sidebar-community-profile'
+					current={activeItemKey === 'CommunityProfileStack'}
 				/>
 				<SidebarItem
 					text={I18n.t('Community')}
 					left={<CustomIcon name='team' size={20} color={COLOR_TEXT} />}
 					onPress={this.onPressCommunity}
 					testID='sidebar-community'
+					current={activeItemKey === 'CommunityStack'}
 				/>
 				<SidebarItem
 					text={I18n.t('Agenda')}
 					left={<CustomIcon name='calendar' size={20} color={COLOR_TEXT} />}
 					onPress={this.onPressAgenda}
 					testID='sidebar-agenda'
+					current={activeItemKey === 'AgendaStack'}
 				/>
 				<SidebarItem
 					text={I18n.t('Chat_Profile_Image')}

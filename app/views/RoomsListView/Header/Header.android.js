@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-	Text, View, TouchableOpacity, Image, StyleSheet
+	Text, View, TouchableOpacity, StyleSheet
 } from 'react-native';
 import PropTypes from 'prop-types';
 import { TextInput } from 'react-native-gesture-handler';
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
 });
 
 const Header = React.memo(({
-	connecting, isFetching, serverName, showServerDropdown, showSearchHeader, onSearchChangeText, onPress
+	connecting, isFetching, serverName, showSearchHeader, onSearchChangeText, onPress
 }) => {
 	if (showSearchHeader) {
 		return (
@@ -69,7 +69,6 @@ const Header = React.memo(({
 				{isFetching ? <Text style={styles.updating}>{I18n.t('Updating')}</Text> : null}
 				<View style={styles.button}>
 					<Text style={[styles.server, isFetching && styles.serverSmall]}>{serverName}</Text>
-					<Image style={[styles.disclosure, showServerDropdown && styles.upsideDown]} source={{ uri: 'disclosure_indicator_server' }} />
 				</View>
 			</TouchableOpacity>
 		</View>
@@ -77,7 +76,6 @@ const Header = React.memo(({
 });
 
 Header.propTypes = {
-	showServerDropdown: PropTypes.bool.isRequired,
 	showSearchHeader: PropTypes.bool.isRequired,
 	onPress: PropTypes.func.isRequired,
 	onSearchChangeText: PropTypes.func.isRequired,
