@@ -363,16 +363,16 @@ workflows:
           requires:
             - e2e-hold
 
-      - ios-build:
-          requires:
-            - lint-testunit
-      - ios-hold-testflight:
-          type: approval
-          requires:
-            - ios-build
-      - ios-testflight:
-          requires:
-            - ios-hold-testflight
+#      - ios-build:
+#          requires:
+#            - lint-testunit
+#      - ios-hold-testflight:
+#          type: approval
+#          requires:
+#            - ios-build
+#      - ios-testflight:
+#          requires:
+#            - ios-hold-testflight
 
       - android-build:
           requires:
