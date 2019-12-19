@@ -116,7 +116,7 @@ class RoomActionsView extends React.Component {
 			if (item.route === 'RoomInfoView') {
 				if (t === 'd') {
 					navigation.navigate('WebsiteView', { t, title: name, url: `https://app.milchjugend.ch/members/${ name }/` });
-				} else if (topic.includes('Event Kanal')) {
+				} else if (topic && topic.includes('Event Kanal')) {
 					navigation.navigate('WebsiteView', { t, title: name, url: `https://app.milchjugend.ch/event/${ name }/` });
 				}
 			} else {
