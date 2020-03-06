@@ -1,10 +1,11 @@
 import * as types from '../constants/types';
 import { APP } from './actionsTypes';
 
-export function appStart(root) {
+export function appStart(root, text) {
 	return {
 		type: APP.START,
-		root
+		root,
+		text
 	};
 }
 
@@ -20,6 +21,12 @@ export function appInit() {
 	};
 }
 
+export function appInitLocalSettings() {
+	return {
+		type: APP.INIT_LOCAL_SETTINGS
+	};
+}
+
 export function setCurrentServer(server) {
 	return {
 		type: types.SET_CURRENT_SERVER,
@@ -30,12 +37,6 @@ export function setCurrentServer(server) {
 export function addSettings(settings) {
 	return {
 		type: types.ADD_SETTINGS,
-		payload: settings
-	};
-}
-export function setAllSettings(settings) {
-	return {
-		type: types.SET_ALL_SETTINGS,
 		payload: settings
 	};
 }

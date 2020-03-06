@@ -1,13 +1,12 @@
 import { AsyncStorage } from 'react-native';
 import { put, takeLatest, all } from 'redux-saga/effects';
-import SplashScreen from 'react-native-splash-screen';
 import RNUserDefaults from 'rn-user-defaults';
 import { sanitizedRaw } from '@nozbe/watermelondb/RawRecord';
+import RNBootSplash from 'react-native-bootsplash';
 
 import * as actions from '../actions';
 import { selectServerRequest } from '../actions/server';
 import { setAllPreferences } from '../actions/sortPreferences';
-import { toggleMarkdown } from '../actions/markdown';
 import { toggleCrashReport } from '../actions/crashReport';
 import { APP } from '../actions/actionsTypes';
 import RocketChat from '../lib/rocketchat';
@@ -20,11 +19,18 @@ import { isIOS } from '../utils/deviceInfo';
 import database from '../lib/database';
 import protectedFunction from '../lib/methods/helpers/protectedFunction';
 
+export const initLocalSettings = function* initLocalSettings() {
+	const sortPreferences = yield RocketChat.getSortPreferences();
+	yield put(setAllPreferences(sortPreferences));
+
+	const allowCrashReport = yield RocketChat.getAllowCrashReport();
+	yield put(toggleCrashReport(allowCrashReport));
+};
+
 const restore = function* restore() {
 	try {
 		let hasMigration;
 		if (isIOS) {
-			yield RNUserDefaults.setName('group.ios.chat.rocket');
 			hasMigration = yield AsyncStorage.getItem('hasMigration');
 		}
 
@@ -84,15 +90,6 @@ const restore = function* restore() {
 			}
 		}
 
-		const sortPreferences = yield RocketChat.getSortPreferences();
-		yield put(setAllPreferences(sortPreferences));
-
-		const useMarkdown = yield RocketChat.getUseMarkdown();
-		yield put(toggleMarkdown(useMarkdown));
-
-		const allowCrashReport = yield RocketChat.getAllowCrashReport();
-		yield put(toggleCrashReport(allowCrashReport));
-
 		if (!token || !server) {
 			yield all([
 				RNUserDefaults.clear(RocketChat.TOKEN_KEY),
@@ -113,19 +110,22 @@ const restore = function* restore() {
 	}
 };
 
-const start = function* start({ root }) {
+const start = function* start({ root, text }) {
 	if (root === 'inside') {
 		yield Navigation.navigate('InsideStack');
 	} else if (root === 'setUsername') {
-		yield Navigation.navigate('SetUsernameView');
+		yield Navigation.navigate('SetUsernameStack');
 	} else if (root === 'outside') {
 		yield Navigation.navigate('OutsideStack');
+	} else if (root === 'loading') {
+		yield Navigation.navigate('AuthLoading', { text });
 	}
-	SplashScreen.hide();
+	RNBootSplash.hide();
 };
 
 const root = function* root() {
 	yield takeLatest(APP.INIT, restore);
 	yield takeLatest(APP.START, start);
+	yield takeLatest(APP.INIT_LOCAL_SETTINGS, initLocalSettings);
 };
 export default root;

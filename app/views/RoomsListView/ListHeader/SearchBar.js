@@ -3,16 +3,34 @@ import PropTypes from 'prop-types';
 
 import SearchBox from '../../../containers/SearchBox';
 import { isIOS } from '../../../utils/deviceInfo';
+import { withTheme } from '../../../theme';
 
-const SearchBar = React.memo(({ onChangeSearchText }) => {
+const SearchBar = React.memo(({
+	theme, onChangeSearchText, inputRef, searching, onCancelSearchPress, onSearchFocus
+}) => {
 	if (isIOS) {
-		return <SearchBox onChangeText={onChangeSearchText} testID='rooms-list-view-search' key='rooms-list-view-search' />;
+		return (
+			<SearchBox
+				onChangeText={onChangeSearchText}
+				testID='rooms-list-view-search'
+				inputRef={inputRef}
+				theme={theme}
+				hasCancel={searching}
+				onCancelPress={onCancelSearchPress}
+				onFocus={onSearchFocus}
+			/>
+		);
 	}
 	return null;
 });
 
 SearchBar.propTypes = {
-	onChangeSearchText: PropTypes.func
+	theme: PropTypes.string,
+	searching: PropTypes.bool,
+	inputRef: PropTypes.func,
+	onChangeSearchText: PropTypes.func,
+	onCancelSearchPress: PropTypes.func,
+	onSearchFocus: PropTypes.func
 };
 
-export default SearchBar;
+export default withTheme(SearchBar);

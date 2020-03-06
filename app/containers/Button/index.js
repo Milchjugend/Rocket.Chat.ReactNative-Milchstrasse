@@ -1,20 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { StyleSheet, Text, ActivityIndicator } from 'react-native';
-import { RectButton } from 'react-native-gesture-handler';
+import { StyleSheet, Text } from 'react-native';
+import Touchable from 'react-native-platform-touchable';
 
-import { COLOR_BUTTON_PRIMARY } from '../../constants/colors';
+import { themes } from '../../constants/colors';
 import sharedStyles from '../../views/Styles';
+import ActivityIndicator from '../ActivityIndicator';
 
-const colors = {
-	background_primary: COLOR_BUTTON_PRIMARY,
-	background_secondary: 'white',
-
-	text_color_primary: 'white',
-	text_color_secondary: COLOR_BUTTON_PRIMARY
-};
-
-/* eslint-disable react-native/no-unused-styles */
 const styles = StyleSheet.create({
 	container: {
 		paddingHorizontal: 15,
@@ -26,23 +18,6 @@ const styles = StyleSheet.create({
 	text: {
 		fontSize: 18,
 		textAlign: 'center'
-	},
-	background_primary: {
-		backgroundColor: colors.background_primary
-	},
-	background_secondary: {
-		backgroundColor: colors.background_secondary
-	},
-	text_primary: {
-		...sharedStyles.textMedium,
-		color: colors.text_color_primary
-	},
-	text_secondary: {
-		...sharedStyles.textBold,
-		color: colors.text_color_secondary
-	},
-	disabled: {
-		backgroundColor: '#e1e5e8'
 	}
 });
 
@@ -54,6 +29,7 @@ export default class Button extends React.PureComponent {
 		disabled: PropTypes.bool,
 		backgroundColor: PropTypes.string,
 		loading: PropTypes.bool,
+		theme: PropTypes.string,
 		style: PropTypes.any
 	}
 
@@ -67,26 +43,39 @@ export default class Button extends React.PureComponent {
 
 	render() {
 		const {
-			title, type, onPress, disabled, backgroundColor, loading, style, ...otherProps
+			title, type, onPress, disabled, backgroundColor, loading, style, theme, ...otherProps
 		} = this.props;
+		const isPrimary = type === 'primary';
 		return (
-			<RectButton
+			<Touchable
 				onPress={onPress}
-				enabled={!(disabled || loading)}
+				disabled={disabled || loading}
 				style={[
 					styles.container,
-					backgroundColor ? { backgroundColor } : styles[`background_${ type }`],
-					disabled && styles.disabled,
+					backgroundColor
+						? { backgroundColor }
+						: { backgroundColor: isPrimary ? themes[theme].actionTintColor : themes[theme].backgroundColor },
+					disabled && { backgroundColor: themes[theme].borderColor },
 					style
 				]}
 				{...otherProps}
 			>
 				{
 					loading
-						? <ActivityIndicator color={colors[`text_color_${ type }`]} />
-						: <Text style={[styles.text, styles[`text_${ type }`]]}>{title}</Text>
+						? <ActivityIndicator color={isPrimary ? themes[theme].buttonText : themes[theme].actionTintColor} />
+						: (
+							<Text
+								style={[
+									styles.text,
+									isPrimary ? sharedStyles.textMedium : sharedStyles.textBold,
+									{ color: isPrimary ? themes[theme].buttonText : themes[theme].actionTintColor }
+								]}
+							>
+								{title}
+							</Text>
+						)
 				}
-			</RectButton>
+			</Touchable>
 		);
 	}
 }

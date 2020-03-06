@@ -4,11 +4,10 @@ import {
 	View,
 	FlatList,
 	BackHandler,
-	ActivityIndicator,
 	Text,
-	ScrollView,
 	Keyboard,
-	Dimensions
+	Dimensions,
+	RefreshControl
 } from 'react-native';
 import { connect } from 'react-redux';
 import { isEqual, orderBy } from 'lodash';
@@ -32,7 +31,7 @@ import {
 } from '../../actions/rooms';
 import { appStart as appStartAction } from '../../actions';
 import debounce from '../../utils/debounce';
-import { isIOS, isAndroid } from '../../utils/deviceInfo';
+import { isIOS, isAndroid, isTablet } from '../../utils/deviceInfo';
 import RoomsListHeaderView from './Header';
 import {
 	DrawerButton,
@@ -40,11 +39,40 @@ import {
 	Item
 } from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
+import ActivityIndicator from '../../containers/ActivityIndicator';
 import ListHeader from './ListHeader';
 import { selectServerRequest as selectServerRequestAction } from '../../actions/server';
 import { animateNextTransition } from '../../utils/layoutAnimation';
+import { withTheme } from '../../theme';
+import { themes } from '../../constants/colors';
+import { themedHeader } from '../../utils/navigation';
+import EventEmitter from '../../utils/events';
+import {
+	KEY_COMMAND,
+	handleCommandShowPreferences,
+	handleCommandSearching,
+	handleCommandSelectRoom,
+	handleCommandPreviousRoom,
+	handleCommandNextRoom,
+	handleCommandShowNewMessage,
+	handleCommandAddNewServer
+} from '../../commands';
+import { MAX_SIDEBAR_WIDTH } from '../../constants/tablet';
+import { withSplit } from '../../split';
+import { getUserSelector } from '../../selectors/login';
 
 const SCROLL_OFFSET = 56;
+const INITIAL_NUM_TO_RENDER = isTablet ? 20 : 12;
+const CHATS_HEADER = 'Chats';
+const UNREAD_HEADER = 'Unread';
+const FAVORITES_HEADER = 'Favorites';
+const DISCUSSIONS_HEADER = 'Discussions';
+const CHANNELS_HEADER = 'Channels';
+const DM_HEADER = 'Direct_Messages';
+const GROUPS_HEADER = 'Private_Groups';
+
+const filterIsUnread = s => (s.unread > 0 || s.alert) && !s.hideUnreadStatus;
+const filterIsFavorite = s => s.f;
 
 const shouldUpdateProps = [
 	'searchText',
@@ -57,7 +85,10 @@ const shouldUpdateProps = [
 	'showUnread',
 	'useRealName',
 	'StoreLastMessage',
-	'appState'
+	'appState',
+	'theme',
+	'split',
+	'refreshing'
 ];
 const getItemLayout = (data, index) => ({
 	length: ROW_HEIGHT,
@@ -67,24 +98,23 @@ const getItemLayout = (data, index) => ({
 const keyExtractor = item => item.rid;
 
 class RoomsListView extends React.Component {
-	static navigationOptions = ({ navigation }) => {
+	static navigationOptions = ({ navigation, screenProps }) => {
 		const searching = navigation.getParam('searching');
-		const cancelSearchingAndroid = navigation.getParam(
-			'cancelSearchingAndroid'
-		);
+		const cancelSearch = navigation.getParam('cancelSearch', () => {});
 		const onPressItem = navigation.getParam('onPressItem', () => {});
-		const initSearchingAndroid = navigation.getParam(
-			'initSearchingAndroid',
+		const initSearching = navigation.getParam(
+			'initSearching',
 			() => {}
 		);
 
 		return {
-			headerLeft: searching ? (
+			...themedHeader(screenProps.theme),
+			headerLeft: searching && isAndroid ? (
 				<CustomHeaderButtons left>
 					<Item
 						title='cancel'
 						iconName='cross'
-						onPress={cancelSearchingAndroid}
+						onPress={cancelSearch}
 					/>
 				</CustomHeaderButtons>
 			) : (
@@ -94,13 +124,13 @@ class RoomsListView extends React.Component {
 				/>
 			),
 			headerTitle: <RoomsListHeaderView />,
-			headerRight: searching ? null : (
+			headerRight: searching && isAndroid ? null : (
 				<CustomHeaderButtons>
 					{isAndroid ? (
 						<Item
 							title='search'
 							iconName='magnifier'
-							onPress={initSearchingAndroid}
+							onPress={initSearching}
 						/>
 					) : null}
 					<Item
@@ -118,10 +148,11 @@ class RoomsListView extends React.Component {
 
 	static propTypes = {
 		navigation: PropTypes.object,
-		userId: PropTypes.string,
-		username: PropTypes.string,
-		token: PropTypes.string,
-		baseUrl: PropTypes.string,
+		user: PropTypes.shape({
+			id: PropTypes.string,
+			username: PropTypes.string,
+			token: PropTypes.string
+		}),
 		server: PropTypes.string,
 		searchText: PropTypes.string,
 		loadingServer: PropTypes.bool,
@@ -130,15 +161,18 @@ class RoomsListView extends React.Component {
 		groupByType: PropTypes.bool,
 		showFavorites: PropTypes.bool,
 		showUnread: PropTypes.bool,
-		useRealName: PropTypes.bool,
+		refreshing: PropTypes.bool,
 		StoreLastMessage: PropTypes.bool,
 		appState: PropTypes.string,
+		theme: PropTypes.string,
 		toggleSortDropdown: PropTypes.func,
 		openSearchHeader: PropTypes.func,
 		closeSearchHeader: PropTypes.func,
 		appStart: PropTypes.func,
 		roomsRequest: PropTypes.func,
-		closeServerDropdown: PropTypes.func
+		closeServerDropdown: PropTypes.func,
+		useRealName: PropTypes.bool,
+		split: PropTypes.bool
 	};
 
 	constructor(props) {
@@ -146,6 +180,8 @@ class RoomsListView extends React.Component {
 		console.time(`${ this.constructor.name } init`);
 		console.time(`${ this.constructor.name } mount`);
 
+		this.gotSubscriptions = false;
+		this.animated = false;
 		const { width } = Dimensions.get('window');
 		this.state = {
 			searching: false,
@@ -153,16 +189,24 @@ class RoomsListView extends React.Component {
 			loading: true,
 			allChats: [],
 			chats: [],
-			unread: [],
-			favorites: [],
-			discussions: [],
-			channels: [],
-			privateGroup: [],
-			direct: [],
 			width
 		};
+	}
+
+	componentDidMount() {
+		this.getSubscriptions();
+		const { navigation, closeServerDropdown } = this.props;
+		navigation.setParams({
+			onPressItem: this._onPressItem,
+			initSearching: this.initSearching,
+			cancelSearch: this.cancelSearch
+		});
+		if (isTablet) {
+			EventEmitter.addEventListener(KEY_COMMAND, this.handleCommands);
+		}
+		Dimensions.addEventListener('change', this.onDimensionsChange);
 		Orientation.unlockAllOrientations();
-		this.willFocusListener = props.navigation.addListener('willFocus', () => {
+		this.willFocusListener = navigation.addListener('willFocus', () => {
 			// Check if there were changes while not focused (it's set on sCU)
 			if (this.shouldUpdate) {
 				// animateNextTransition();
@@ -170,49 +214,40 @@ class RoomsListView extends React.Component {
 				this.shouldUpdate = false;
 			}
 		});
-		this.didFocusListener = props.navigation.addListener('didFocus', () => {
-			BackHandler.addEventListener(
-				'hardwareBackPress',
-				this.handleBackPress
-			);
+		this.didFocusListener = navigation.addListener('didFocus', () => {
+			this.animated = true;
+			this.backHandler = BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
 		});
-		this.willBlurListener = props.navigation.addListener('willBlur', () => {
-			props.closeServerDropdown();
-			BackHandler.addEventListener(
-				'hardwareBackPress',
-				this.handleBackPress
-			);
+		this.willBlurListener = navigation.addListener('willBlur', () => {
+			this.animated = false;
+			closeServerDropdown();
+			if (this.backHandler && this.backHandler.remove) {
+				this.backHandler.remove();
+			}
 		});
-	}
-
-	componentDidMount() {
-		this.getSubscriptions();
-		const { navigation } = this.props;
-		navigation.setParams({
-			onPressItem: this._onPressItem,
-			initSearchingAndroid: this.initSearchingAndroid,
-			cancelSearchingAndroid: this.cancelSearchingAndroid
-		});
-		Dimensions.addEventListener('change', this.onDimensionsChange);
 		console.timeEnd(`${ this.constructor.name } mount`);
 	}
 
 	componentWillReceiveProps(nextProps) {
-		const { loadingServer, searchText } = this.props;
+		const { loadingServer, searchText, server } = this.props;
 
 		if (nextProps.server && loadingServer !== nextProps.loadingServer) {
 			if (nextProps.loadingServer) {
-				this.internalSetState({ loading: true });
+				this.setState({ loading: true });
 			} else {
 				this.getSubscriptions();
 			}
-		} else if (searchText !== nextProps.searchText) {
+		}
+		if (server && server !== nextProps.server) {
+			this.gotSubscriptions = false;
+		}
+		if (searchText !== nextProps.searchText) {
 			this.search(nextProps.searchText);
 		}
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
-		const { allChats } = this.state;
+		const { allChats, searching } = this.state;
 		// eslint-disable-next-line react/destructuring-assignment
 		const propsUpdated = shouldUpdateProps.some(key => nextProps[key] !== this.props[key]);
 		if (propsUpdated) {
@@ -227,6 +262,10 @@ class RoomsListView extends React.Component {
 			this.shouldUpdate = true;
 		}
 
+		if (nextState.searching !== searching) {
+			return true;
+		}
+
 		// Abort if it's not focused
 		if (!nextProps.navigation.isFocused()) {
 			return false;
@@ -234,14 +273,10 @@ class RoomsListView extends React.Component {
 
 		const {
 			loading,
-			searching,
 			width,
 			search
 		} = this.state;
 		if (nextState.loading !== loading) {
-			return true;
-		}
-		if (nextState.searching !== searching) {
 			return true;
 		}
 		if (nextState.width !== width) {
@@ -276,7 +311,7 @@ class RoomsListView extends React.Component {
 				&& prevProps.showUnread === showUnread
 			)
 		) {
-			this.getSubscriptions();
+			this.getSubscriptions(true);
 		} else if (
 			appState === 'foreground'
 			&& appState !== prevProps.appState
@@ -286,9 +321,6 @@ class RoomsListView extends React.Component {
 	}
 
 	componentWillUnmount() {
-		if (this.getSubscriptions && this.getSubscriptions.stop) {
-			this.getSubscriptions.stop();
-		}
 		if (this.querySubscription && this.querySubscription.unsubscribe) {
 			this.querySubscription.unsubscribe();
 		}
@@ -301,25 +333,44 @@ class RoomsListView extends React.Component {
 		if (this.willBlurListener && this.willBlurListener.remove) {
 			this.willBlurListener.remove();
 		}
+		if (isTablet) {
+			EventEmitter.removeListener(KEY_COMMAND, this.handleCommands);
+		}
 		Dimensions.removeEventListener('change', this.onDimensionsChange);
 		console.countReset(`${ this.constructor.name }.render calls`);
 	}
 
+	// eslint-disable-next-line react/sort-comp
 	onDimensionsChange = ({ window: { width } }) => this.setState({ width });
 
-	// eslint-disable-next-line react/sort-comp
 	internalSetState = (...args) => {
-		const { navigation } = this.props;
-		if (navigation.isFocused()) {
+		if (this.animated) {
 			animateNextTransition();
 		}
 		this.setState(...args);
 	};
 
-	getSubscriptions = debounce(async() => {
+	addRoomsGroup = (data, header, allData) => {
+		if (data.length > 0) {
+			if (header) {
+				allData.push({ rid: header, separator: true });
+			}
+			allData = allData.concat(data);
+		}
+		return allData;
+	}
+
+	getSubscriptions = async(force = false) => {
+		if (this.gotSubscriptions && !force) {
+			return;
+		}
+		this.gotSubscriptions = true;
+
 		if (this.querySubscription && this.querySubscription.unsubscribe) {
 			this.querySubscription.unsubscribe();
 		}
+
+		this.setState({ loading: true });
 
 		const {
 			sortBy,
@@ -333,19 +384,13 @@ class RoomsListView extends React.Component {
 			.get('subscriptions')
 			.query(
 				Q.where('archived', false),
-				Q.where('open', true),
-				Q.where('t', Q.notEq('l'))
+				Q.where('open', true)
 			)
 			.observeWithColumns(['room_updated_at', 'unread', 'alert', 'user_mentions', 'f', 't']);
 
 		this.querySubscription = observable.subscribe((data) => {
+			let tempChats = [];
 			let chats = [];
-			let unread = [];
-			let favorites = [];
-			let discussions = [];
-			let channels = [];
-			let privateGroup = [];
-			let direct = [];
 			if (sortBy === 'alphabetical') {
 				chats = orderBy(data, ['name'], ['asc']);
 			} else {
@@ -370,65 +415,86 @@ class RoomsListView extends React.Component {
 
 			// unread
 			if (showUnread) {
-				unread = chats.filter(s => (s.unread > 0 || s.alert) && !s.hideUnreadStatus);
-			} else {
-				unread = [];
+				const unread = chats.filter(s => filterIsUnread(s));
+				chats = chats.filter(s => !filterIsUnread(s));
+				tempChats = this.addRoomsGroup(unread, UNREAD_HEADER, tempChats);
 			}
 
 			// favorites
 			if (showFavorites) {
-				favorites = chats.filter(s => s.f);
-			} else {
-				favorites = [];
+				const favorites = chats.filter(s => filterIsFavorite(s));
+				chats = chats.filter(s => !filterIsFavorite(s));
+				tempChats = this.addRoomsGroup(favorites, FAVORITES_HEADER, tempChats);
 			}
 
 			// type
 			if (groupByType) {
-				discussions = chats.filter(s => s.prid);
-				channels = chats.filter(s => s.t === 'c' && !s.prid);
-				privateGroup = chats.filter(s => s.t === 'p' && !s.prid);
-				direct = chats.filter(s => s.t === 'd' && !s.prid);
-			} else if (showUnread) {
-				chats = chats.filter(s => (!s.unread && !s.alert) || s.hideUnreadStatus);
+				const discussions = chats.filter(s => s.prid);
+				const channels = chats.filter(s => s.t === 'c' && !s.prid);
+				const privateGroup = chats.filter(s => s.t === 'p' && !s.prid);
+				const direct = chats.filter(s => s.t === 'd' && !s.prid);
+				tempChats = this.addRoomsGroup(discussions, DISCUSSIONS_HEADER, tempChats);
+				tempChats = this.addRoomsGroup(channels, CHANNELS_HEADER, tempChats);
+				tempChats = this.addRoomsGroup(privateGroup, GROUPS_HEADER, tempChats);
+				tempChats = this.addRoomsGroup(direct, DM_HEADER, tempChats);
+			} else if (showUnread || showFavorites) {
+				tempChats = this.addRoomsGroup(chats, CHATS_HEADER, tempChats);
+			} else {
+				tempChats = chats;
 			}
 
 			this.internalSetState({
+				chats: tempChats,
 				allChats,
-				chats,
-				unread,
-				favorites,
-				discussions,
-				channels,
-				privateGroup,
-				direct,
 				loading: false
 			});
 		});
-	}, 300, true);
+	}
 
-	initSearchingAndroid = () => {
+	initSearching = () => {
 		const { openSearchHeader, navigation } = this.props;
-		this.setState({ searching: true });
-		navigation.setParams({ searching: true });
-		openSearchHeader();
+		this.internalSetState({ searching: true });
+		if (isAndroid) {
+			navigation.setParams({ searching: true });
+			openSearchHeader();
+		}
 	};
 
-	cancelSearchingAndroid = () => {
+	cancelSearch = () => {
+		const { searching } = this.state;
+		const { closeSearchHeader, navigation } = this.props;
+
+		if (!searching) {
+			return;
+		}
+
+		if (isIOS && this.inputRef) {
+			this.inputRef.blur();
+			this.inputRef.clear();
+		}
 		if (isAndroid) {
-			const { closeSearchHeader, navigation } = this.props;
-			this.setState({ searching: false });
 			navigation.setParams({ searching: false });
 			closeSearchHeader();
-			this.internalSetState({ search: [] });
-			Keyboard.dismiss();
 		}
+		Keyboard.dismiss();
+
+		this.setState({ searching: false, search: [] }, () => {
+			setTimeout(() => {
+				const offset = isAndroid ? 0 : SCROLL_OFFSET;
+				if (this.scroll.scrollTo) {
+					this.scroll.scrollTo({ x: 0, y: offset, animated: true });
+				} else if (this.scroll.scrollToOffset) {
+					this.scroll.scrollToOffset({ offset });
+				}
+			}, 200);
+		});
 	};
 
 	handleBackPress = () => {
 		const { searching } = this.state;
 		const { appStart } = this.props;
 		if (searching) {
-			this.cancelSearchingAndroid();
+			this.cancelSearch();
 			return true;
 		}
 		appStart('background');
@@ -437,20 +503,31 @@ class RoomsListView extends React.Component {
 
 	// eslint-disable-next-line react/sort-comp
 	search = debounce(async(text) => {
+		const { searching } = this.state;
 		const result = await RocketChat.search({ text });
+		// if the search was cancelled before the promise is resolved
+		if (!searching) {
+			return;
+		}
 		this.internalSetState({
-			search: result
+			search: result,
+			searching: true
 		});
+		if (this.scroll && this.scroll.scrollTo) {
+			this.scroll.scrollTo({ x: 0, y: 0, animated: true });
+		}
 	}, 300);
 
-	getRoomTitle = (item) => {
-		const { useRealName } = this.props;
-		return ((item.prid || useRealName) && item.fname) || item.name;
-	};
+	getRoomTitle = item => RocketChat.getRoomTitle(item)
+
+	getRoomAvatar = item => RocketChat.getRoomAvatar(item)
+
+	getUserPresence = uid => RocketChat.getUserPresence(uid)
 
 	goRoom = (item) => {
-		this.cancelSearchingAndroid();
 		const { navigation } = this.props;
+		this.cancelSearch();
+		this.item = item;
 		navigation.navigate('RoomView', {
 			rid: item.rid,
 			name: this.getRoomTitle(item),
@@ -458,7 +535,7 @@ class RoomsListView extends React.Component {
 			prid: item.prid,
 			room: item
 		});
-	};
+	}
 
 	_onPressItem = async(item = {}) => {
 		if (!item.search) {
@@ -567,16 +644,94 @@ class RoomsListView extends React.Component {
 		navigation.navigate('DirectoryView');
 	};
 
+	goRoomByIndex = (index) => {
+		const { chats } = this.state;
+		const filteredChats = chats.filter(c => !c.separator);
+		const room = filteredChats[index - 1];
+		if (room) {
+			this.goRoom(room);
+		}
+	}
+
+	findOtherRoom = (index, sign) => {
+		const { chats } = this.state;
+		const otherIndex = index + sign;
+		const otherRoom = chats[otherIndex];
+		if (!otherRoom) {
+			return;
+		}
+		if (otherRoom.separator) {
+			return this.findOtherRoom(otherIndex, sign);
+		} else {
+			return otherRoom;
+		}
+	}
+
+	// Go to previous or next room based on sign (-1 or 1)
+	// It's used by iPad key commands
+	goOtherRoom = (sign) => {
+		if (!this.item) {
+			return;
+		}
+		// Don't run during search
+		const { search } = this.state;
+		if (search.length > 0) {
+			return;
+		}
+
+		const { chats } = this.state;
+		const index = chats.findIndex(c => c.rid === this.item.rid);
+		const otherRoom = this.findOtherRoom(index, sign);
+		if (otherRoom) {
+			this.goRoom(otherRoom);
+		}
+	}
+
+	handleCommands = ({ event }) => {
+		const { navigation, server } = this.props;
+		const { input } = event;
+		if (handleCommandShowPreferences(event)) {
+			navigation.toggleDrawer();
+		} else if (handleCommandSearching(event)) {
+			this.scroll.scrollToOffset({ animated: true, offset: 0 });
+			this.inputRef.focus();
+		} else if (handleCommandSelectRoom(event)) {
+			this.goRoomByIndex(input);
+		} else if (handleCommandPreviousRoom(event)) {
+			this.goOtherRoom(-1);
+		} else if (handleCommandNextRoom(event)) {
+			this.goOtherRoom(1);
+		} else if (handleCommandShowNewMessage(event)) {
+			navigation.navigate('NewMessageView', { onPressItem: this._onPressItem });
+		} else if (handleCommandAddNewServer(event)) {
+			navigation.navigate('OnboardingView', { previousServer: server });
+		}
+	};
+
+	onRefresh = () => {
+		const { searching } = this.state;
+		const { roomsRequest } = this.props;
+		if (searching) {
+			return;
+		}
+		roomsRequest({ allData: true });
+	}
+
 	getScrollRef = ref => (this.scroll = ref);
 
+	getInputRef = ref => (this.inputRef = ref);
+
 	renderListHeader = () => {
-		const { search } = this.state;
+		const { searching } = this.state;
 		const { sortBy } = this.props;
 		return (
 			<ListHeader
-				searchLength={search.length}
+				inputRef={this.getInputRef}
+				searching={searching}
 				sortBy={sortBy}
 				onChangeSearchText={this.search}
+				onCancelSearchPress={this.cancelSearch}
+				onSearchFocus={this.initSearching}
 				toggleSort={this.toggleSort}
 				goDirectory={this.goDirectory}
 			/>
@@ -590,25 +745,35 @@ class RoomsListView extends React.Component {
 	};
 
 	renderItem = ({ item }) => {
+		if (item.separator) {
+			return this.renderSectionHeader(item.rid);
+		}
+
 		const { width } = this.state;
 		const {
-			userId,
-			username,
-			token,
-			baseUrl,
-			StoreLastMessage
+			user: {
+				id: userId,
+				username,
+				token
+			},
+			server,
+			StoreLastMessage,
+			useRealName,
+			theme,
+			split
 		} = this.props;
 		const id = item.rid.replace(userId, '').trim();
 
 		return (
 			<RoomItem
+				theme={theme}
 				alert={item.alert}
 				unread={item.unread}
 				hideUnreadStatus={item.hideUnreadStatus}
 				userMentions={item.userMentions}
 				isRead={this.getIsRead(item)}
 				favorite={item.f}
-				avatar={item.name}
+				avatar={this.getRoomAvatar(item)}
 				lastMessage={item.lastMessage}
 				name={this.getRoomTitle(item)}
 				_updatedAt={item.roomUpdatedAt}
@@ -619,148 +784,63 @@ class RoomsListView extends React.Component {
 				token={token}
 				rid={item.rid}
 				type={item.t}
-				baseUrl={baseUrl}
+				baseUrl={server}
 				prid={item.prid}
 				showLastMessage={StoreLastMessage}
 				onPress={() => this._onPressItem(item)}
 				testID={`rooms-list-view-item-${ item.name }`}
-				width={width}
+				width={split ? MAX_SIDEBAR_WIDTH : width}
 				toggleFav={this.toggleFav}
 				toggleRead={this.toggleRead}
 				hideChannel={this.hideChannel}
+				useRealName={useRealName}
+				getUserPresence={this.getUserPresence}
 			/>
 		);
 	};
 
-	renderSectionHeader = header => (
-		<View style={styles.groupTitleContainer}>
-			<Text style={styles.groupTitle}>{I18n.t(header)}</Text>
-		</View>
-	);
-
-	renderSection = (data, header) => {
-		const { showUnread, showFavorites, groupByType } = this.props;
-
-		if (header === 'Unread' && !showUnread) {
-			return null;
-		} else if (header === 'Favorites' && !showFavorites) {
-			return null;
-		} else if (
-			[
-				'Discussions',
-				'Channels',
-				'Direct_Messages',
-				'Private_Groups'
-			].includes(header)
-			&& !groupByType
-		) {
-			return null;
-		} else if (header === 'Chats' && groupByType) {
-			return null;
-		}
-		if (data && data.length > 0) {
-			return (
-				<FlatList
-					data={data}
-					extraData={data}
-					keyExtractor={keyExtractor}
-					style={styles.list}
-					renderItem={this.renderItem}
-					ListHeaderComponent={() => this.renderSectionHeader(header)}
-					getItemLayout={getItemLayout}
-					enableEmptySections
-					removeClippedSubviews={isIOS}
-					keyboardShouldPersistTaps='always'
-					initialNumToRender={12}
-					windowSize={7}
-				/>
-			);
-		}
-		return null;
-	};
-
-	renderList = () => {
-		const {
-			search,
-			chats,
-			unread,
-			favorites,
-			discussions,
-			channels,
-			direct,
-			privateGroup
-		} = this.state;
-
-		if (search.length > 0) {
-			return (
-				<FlatList
-					data={search}
-					extraData={search}
-					keyExtractor={keyExtractor}
-					style={styles.list}
-					renderItem={this.renderItem}
-					getItemLayout={getItemLayout}
-					enableEmptySections
-					removeClippedSubviews={isIOS}
-					keyboardShouldPersistTaps='always'
-					initialNumToRender={12}
-					windowSize={7}
-				/>
-			);
-		}
-
+	renderSectionHeader = (header) => {
+		const { theme } = this.props;
 		return (
-			<View style={styles.container}>
-				{this.renderSection(unread, 'Unread')}
-				{this.renderSection(favorites, 'Favorites')}
-				{this.renderSection(discussions, 'Discussions')}
-				{this.renderSection(channels, 'Channels')}
-				{this.renderSection(direct, 'Direct_Messages')}
-				{this.renderSection(privateGroup, 'Private_Groups')}
-				{this.renderSection(chats, 'Chats')}
+			<View style={[styles.groupTitleContainer, { backgroundColor: themes[theme].backgroundColor }]}>
+				<Text style={[styles.groupTitle, { color: themes[theme].controlText }]}>{I18n.t(header)}</Text>
 			</View>
 		);
-	};
+	}
 
 	renderScroll = () => {
-		const { loading } = this.state;
+		const {
+			loading, chats, search, searching
+		} = this.state;
+		const { theme, refreshing } = this.props;
 
 		if (loading) {
-			return <ActivityIndicator style={styles.loading} />;
-		}
-
-		const { showUnread, showFavorites, groupByType } = this.props;
-		if (!(showUnread || showFavorites || groupByType)) {
-			const { chats, search } = this.state;
-			return (
-				<FlatList
-					ref={this.getScrollRef}
-					data={search.length ? search : chats}
-					extraData={search.length ? search : chats}
-					contentOffset={isIOS ? { x: 0, y: SCROLL_OFFSET } : {}}
-					keyExtractor={keyExtractor}
-					style={styles.list}
-					renderItem={this.renderItem}
-					ListHeaderComponent={this.renderListHeader}
-					getItemLayout={getItemLayout}
-					removeClippedSubviews={isIOS}
-					keyboardShouldPersistTaps='always'
-					initialNumToRender={9}
-					windowSize={9}
-				/>
-			);
+			return <ActivityIndicator theme={theme} />;
 		}
 
 		return (
-			<ScrollView
+			<FlatList
 				ref={this.getScrollRef}
+				data={searching ? search : chats}
+				extraData={searching ? search : chats}
 				contentOffset={isIOS ? { x: 0, y: SCROLL_OFFSET } : {}}
+				keyExtractor={keyExtractor}
+				style={[styles.list, { backgroundColor: themes[theme].backgroundColor }]}
+				renderItem={this.renderItem}
+				ListHeaderComponent={this.renderListHeader}
+				getItemLayout={getItemLayout}
+				removeClippedSubviews={isIOS}
 				keyboardShouldPersistTaps='always'
-				testID='rooms-list-view-list'
-			>
-				{this.renderListHeader()}
-				{this.renderList()}
-			</ScrollView>
+				initialNumToRender={INITIAL_NUM_TO_RENDER}
+				refreshControl={(
+					<RefreshControl
+						refreshing={refreshing}
+						onRefresh={this.onRefresh}
+						tintColor={themes[theme].auxiliaryText}
+					/>
+				)}
+				windowSize={9}
+			/>
 		);
 	};
 
@@ -771,16 +851,17 @@ class RoomsListView extends React.Component {
 			groupByType,
 			showFavorites,
 			showUnread,
-			showSortDropdown
+			showSortDropdown,
+			theme
 		} = this.props;
 
 		return (
 			<SafeAreaView
-				style={styles.container}
+				style={[styles.container, { backgroundColor: themes[theme].backgroundColor }]}
 				testID='rooms-list-view'
 				forceInset={{ vertical: 'never' }}
 			>
-				<StatusBar />
+				<StatusBar theme={theme} />
 				{this.renderScroll()}
 				{showSortDropdown ? (
 					<SortDropdown
@@ -797,15 +878,13 @@ class RoomsListView extends React.Component {
 }
 
 const mapStateToProps = state => ({
-	userId: state.login.user && state.login.user.id,
-	username: state.login.user && state.login.user.username,
-	token: state.login.user && state.login.user.token,
+	user: getUserSelector(state),
 	server: state.server.server,
-	baseUrl: state.settings.baseUrl || state.server ? state.server.server : '',
 	searchText: state.rooms.searchText,
 	loadingServer: state.server.loading,
 	showServerDropdown: state.rooms.showServerDropdown,
 	showSortDropdown: state.rooms.showSortDropdown,
+	refreshing: state.rooms.refreshing,
 	sortBy: state.sortPreferences.sortBy,
 	groupByType: state.sortPreferences.groupByType,
 	showFavorites: state.sortPreferences.showFavorites,
@@ -820,9 +899,9 @@ const mapDispatchToProps = dispatch => ({
 	openSearchHeader: () => dispatch(openSearchHeaderAction()),
 	closeSearchHeader: () => dispatch(closeSearchHeaderAction()),
 	appStart: () => dispatch(appStartAction()),
-	roomsRequest: () => dispatch(roomsRequestAction()),
+	roomsRequest: params => dispatch(roomsRequestAction(params)),
 	selectServerRequest: server => dispatch(selectServerRequestAction(server)),
 	closeServerDropdown: () => dispatch(closeServerDropdownAction())
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(RoomsListView);
+export default connect(mapStateToProps, mapDispatchToProps)(withTheme(withSplit(RoomsListView)));

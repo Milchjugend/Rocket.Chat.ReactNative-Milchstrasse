@@ -6,7 +6,7 @@ import log from '../../utils/log';
 import database from '../database';
 import protectedFunction from './helpers/protectedFunction';
 
-export default function updateMessages({ rid, update, remove }) {
+export default function updateMessages({ rid, update = [], remove = [] }) {
 	try {
 		if (!((update && update.length) || (remove && remove.length))) {
 			return;
@@ -22,7 +22,7 @@ export default function updateMessages({ rid, update, remove }) {
 				console.log('updateMessages: subscription not found');
 			}
 
-			const messagesIds = update.map(m => m._id);
+			const messagesIds = [...update.map(m => m._id), ...remove.map(m => m._id)];
 			const msgCollection = db.collections.get('messages');
 			const threadCollection = db.collections.get('threads');
 			const threadMessagesCollection = db.collections.get('thread_messages');
@@ -74,17 +74,29 @@ export default function updateMessages({ rid, update, remove }) {
 			// Update
 			msgsToUpdate = msgsToUpdate.map((message) => {
 				const newMessage = update.find(m => m._id === message.id);
+				if (message._hasPendingUpdate) {
+					console.log(message);
+					return;
+				}
 				return message.prepareUpdate(protectedFunction((m) => {
 					Object.assign(m, newMessage);
 				}));
 			});
 			threadsToUpdate = threadsToUpdate.map((thread) => {
+				if (thread._hasPendingUpdate) {
+					console.log(thread);
+					return;
+				}
 				const newThread = allThreads.find(t => t._id === thread.id);
 				return thread.prepareUpdate(protectedFunction((t) => {
 					Object.assign(t, newThread);
 				}));
 			});
 			threadMessagesToUpdate = threadMessagesToUpdate.map((threadMessage) => {
+				if (threadMessage._hasPendingUpdate) {
+					console.log(threadMessage);
+					return;
+				}
 				const newThreadMessage = allThreadMessages.find(t => t._id === threadMessage.id);
 				return threadMessage.prepareUpdate(protectedFunction((tm) => {
 					Object.assign(tm, newThreadMessage);

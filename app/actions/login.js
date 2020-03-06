@@ -1,9 +1,10 @@
 import * as types from './actionsTypes';
 
-export function loginRequest(credentials) {
+export function loginRequest(credentials, logoutOnError) {
 	return {
 		type: types.LOGIN.REQUEST,
-		credentials
+		credentials,
+		logoutOnError
 	};
 }
 
@@ -21,9 +22,10 @@ export function loginFailure(err) {
 	};
 }
 
-export function logout() {
+export function logout(forcedByServer = false) {
 	return {
-		type: types.LOGOUT
+		type: types.LOGOUT,
+		forcedByServer
 	};
 }
 
