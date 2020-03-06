@@ -20,6 +20,7 @@ import { themes } from '../constants/colors';
 import { withTheme } from '../theme';
 import { themedHeader } from '../utils/navigation';
 import { isTablet } from '../utils/deviceInfo';
+import Button from "../containers/Button";
 
 const styles = StyleSheet.create({
 	container: {
@@ -462,6 +463,50 @@ class LoginSignupView extends React.Component {
 					{this.renderServices()}
 				</SafeAreaView>
 			</ScrollView>
+		);
+	}
+
+	renderRegister = () => {
+		const { Accounts_RegistrationForm, Accounts_RegistrationForm_LinkReplacementText, theme } = this.props;
+		if (Accounts_RegistrationForm !== 'Public') {
+			return <Text style={[styles.registerDisabled, { color: themes[theme].auxiliaryText }]}>{Accounts_RegistrationForm_LinkReplacementText}</Text>;
+		}
+		return (
+			<Button
+				title={I18n.t('Create_account')}
+				type='secondary'
+				onPress={() => this.register()}
+				theme={theme}
+				testID='welcome-view-register'
+			/>
+		);
+	}
+
+	render() {
+		const { theme } = this.props;
+		return (
+			<SafeAreaView
+				testID='welcome-view'
+				forceInset={{ vertical: 'never' }}
+				style={[styles.safeArea, { backgroundColor: themes[theme].backgroundColor }]}
+			>
+				<ScrollView
+					style={[
+						sharedStyles.containerScrollView,
+						sharedStyles.container,
+						styles.container,
+						{ backgroundColor: themes[theme].backgroundColor },
+						isTablet && sharedStyles.tabletScreenContent
+					]}
+					{...scrollPersistTaps}
+				>
+					<StatusBar theme={theme} />
+					{this.renderServices()}
+					{this.renderServicesSeparator()}
+					{this.renderLogin()}
+					{this.renderRegister()}
+				</ScrollView>
+			</SafeAreaView>
 		);
 	}
 }

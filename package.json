@@ -89,7 +89,7 @@
     "react-native-unimodules": "0.5.3",
     "react-native-vector-icons": "6.6.0",
     "react-native-video": "5.0.2",
-    "react-native-webview": "7.5.1",
+    "react-native-webview": "8.1.2",
     "react-navigation": "^4.0.10",
     "react-navigation-drawer": "1.4.0",
     "react-navigation-header-buttons": "3.0.4",
@@ -109,7 +109,8 @@
     "semver": "6.3.0",
     "snyk": "1.210.0",
     "strip-ansi": "5.2.0",
-    "url-parse": "^1.4.7"
+    "url-parse": "^1.4.7",
+    "yoga-layout": "^1.9.3"
   },
   "devDependencies": {
     "@babel/core": "^7.6.2",

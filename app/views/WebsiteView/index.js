@@ -8,13 +8,11 @@ import {
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { toggleMarkdown as toggleMarkdownAction } from '../../actions/markdown';
 import { toggleCrashReport as toggleCrashReportAction } from '../../actions/crashReport';
 
 import StatusBar from '../../containers/StatusBar';
 
 import styles from './styles';
-import sharedStyles from '../Styles';
 
 const ItemInfo = React.memo(({ info }) => (
 	<View style={styles.infoContainer}>
@@ -52,7 +50,7 @@ class WebsiteView extends React.Component {
 		const { visible } = this.state;
 		const url = navigation.getParam('url', '');
 		return (
-			<SafeAreaView style={sharedStyles.listSafeArea} testID='settings-view'>
+			<SafeAreaView style={styles.container} testID='settings-view'>
 				<StatusBar />
 				<WebView
 					onLoadStart={() => (this.showSpinner())}
@@ -81,12 +79,10 @@ class WebsiteView extends React.Component {
 
 const mapStateToProps = state => ({
 	server: state.server,
-	useMarkdown: state.markdown.useMarkdown,
 	allowCrashReport: state.crashReport.allowCrashReport
 });
 
 const mapDispatchToProps = dispatch => ({
-	toggleMarkdown: params => dispatch(toggleMarkdownAction(params)),
 	toggleCrashReport: params => dispatch(toggleCrashReportAction(params))
 });
 

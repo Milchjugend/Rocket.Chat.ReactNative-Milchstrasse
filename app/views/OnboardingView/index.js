@@ -144,6 +144,7 @@ class OnboardingView extends React.Component {
 						icon={<CustomIcon name='permalink' size={30} color={themes[theme].actionTintColor} />}
 						onPress={this.connectMilchstrasseServer}
 						testID='connect-milchstrasse-button'
+						theme={theme}
 					/>
 				</View>
 				{this.renderClose()}
