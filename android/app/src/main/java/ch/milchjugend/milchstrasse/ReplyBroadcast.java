@@ -1,4 +1,4 @@
-package chat.rocket.reactnative;
+package ch.milchjugend.milchstrasse;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
