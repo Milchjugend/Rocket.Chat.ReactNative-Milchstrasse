@@ -20,7 +20,7 @@ platform :ios do
   lane :beta do
     enable_automatic_code_signing(path: "RocketChatRN.xcodeproj")
     increment_build_number(xcodeproj: "RocketChatRN.xcodeproj")
-    build_app(workspace: "RocketChatRN.xcworkspace", scheme: "RocketChatRN", export_xcargs: "-allowProvisioningUpdates")
+    build_ios_app(workspace: "RocketChatRN.xcworkspace", scheme: "RocketChatRN", export_xcargs: "-allowProvisioningUpdates")
     upload_to_testflight
   end
 end
