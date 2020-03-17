@@ -15,7 +15,7 @@ import StatusBar from '../../containers/StatusBar';
 import styles from './styles';
 import { themedHeader } from '../../utils/navigation';
 import { themes } from '../../constants/colors';
-import I18n from "../../i18n";
+import I18n from '../../i18n';
 
 const ItemInfo = React.memo(({ info }) => (
 	<View style={styles.infoContainer}>

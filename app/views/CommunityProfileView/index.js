@@ -13,10 +13,9 @@ import { toggleCrashReport as toggleCrashReportAction } from '../../actions/cras
 import { DrawerButton } from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
 import styles from './styles';
-import sharedStyles from '../Styles';
 import { themedHeader } from '../../utils/navigation';
 import { themes } from '../../constants/colors';
-import I18n from "../../i18n";
+import I18n from '../../i18n';
 
 const ItemInfo = React.memo(({ info }) => (
 	<View style={styles.infoContainer}>

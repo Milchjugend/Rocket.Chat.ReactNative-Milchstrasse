@@ -20,7 +20,7 @@ import { themes } from '../constants/colors';
 import { withTheme } from '../theme';
 import { themedHeader } from '../utils/navigation';
 import { isTablet } from '../utils/deviceInfo';
-import Button from "../containers/Button";
+import Button from '../containers/Button';
 
 const styles = StyleSheet.create({
 	container: {
@@ -452,7 +452,7 @@ class LoginSignupView extends React.Component {
 	}
 
 	renderLogin = () => {
-		const { Accounts_ShowFormLogin, theme } = this.props;
+		const { Accounts_ShowFormLogin } = this.props;
 		if (!Accounts_ShowFormLogin) {
 			return null;
 		}

@@ -90,7 +90,8 @@ Header.propTypes = {
 	connecting: PropTypes.bool,
 	isFetching: PropTypes.bool,
 	serverName: PropTypes.string,
-	theme: PropTypes.string
+	theme: PropTypes.string,
+	showServerDropdown: PropTypes.bool
 };
 
 Header.defaultProps = {
