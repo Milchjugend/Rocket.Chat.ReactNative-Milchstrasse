@@ -4,7 +4,10 @@
   "summary": "Advanced Push Notifications (Silent, interactive notifications) for iOS & Android",
   "description": "Advanced Push Notifications (Silent, interactive notifications) for iOS & Android",
   "license": "MIT",
-  "authors": "Lidan Hifi <lidan.hifi@gmail.com>",
+  "authors": {
+    "name": "Lidan Hifi",
+    "email": "lidan.hifi@gmail.com"
+  },
   "homepage": "https://github.com/wix/react-native-notifications",
   "source": {
     "git": "https://github.com/wix/react-native-notifications",

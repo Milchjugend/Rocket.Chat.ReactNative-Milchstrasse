@@ -3,7 +3,10 @@
   "version": "5.6.1",
   "summary": "React Native UI component which tracks the keyboard",
   "license": "MIT",
-  "authors": "Artal Druk <artald@wix.com>",
+  "authors": {
+    "name": "Artal Druk",
+    "email": "artald@wix.com"
+  },
   "homepage": "https://github.com/wix/react-native-keyboard-tracking-view",
   "platforms": {
     "ios": "9.0"

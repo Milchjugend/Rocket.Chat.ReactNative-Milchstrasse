@@ -2,11 +2,13 @@
   "name": "react-native-background-timer",
   "version": "2.1.1",
   "summary": "Emit event periodically (even when app is in the background)",
-  "homepage": "https://github.com/ocetnik/react-native-background-timer.git",
+  "homepage": "git+https://github.com/ocetnik/react-native-background-timer.git",
   "license": "MIT",
-  "authors": "David Ocetnik",
+  "authors": {
+    "name": "David Ocetnik"
+  },
   "source": {
-    "git": "https://github.com/ocetnik/react-native-background-timer.git",
+    "git": "git+https://github.com/ocetnik/react-native-background-timer.git",
     "tag": "v#{s.version}"
   },
   "requires_arc": true,

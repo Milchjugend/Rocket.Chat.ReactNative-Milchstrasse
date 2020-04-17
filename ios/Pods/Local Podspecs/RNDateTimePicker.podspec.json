@@ -4,7 +4,11 @@
   "summary": "DateTimePicker component for React Native",
   "description": "DateTimePicker component for React Native",
   "license": "MIT",
-  "authors": "Martijn Swaagman <mswaagman@godaddy.com> (https://github.com/swaagie)",
+  "authors": {
+    "name": "Martijn Swaagman",
+    "email": "mswaagman@godaddy.com",
+    "url": "https://github.com/swaagie"
+  },
   "homepage": "https://github.com/react-native-community/react-native-datetimepicker#readme",
   "platforms": {
     "ios": "8.0"

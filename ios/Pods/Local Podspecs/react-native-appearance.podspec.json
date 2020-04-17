@@ -3,7 +3,10 @@
   "version": "0.3.1",
   "summary": "Polyfill for `Appearance` API which will be available in `react-native@0.62`.",
   "license": "MIT",
-  "authors": "Brent Vatne <brent@expo.io>",
+  "authors": {
+    "name": "Brent Vatne",
+    "email": "brent@expo.io"
+  },
   "homepage": "https://github.com/expo/react-native-appearance#readme",
   "platforms": {
     "ios": "9.0",

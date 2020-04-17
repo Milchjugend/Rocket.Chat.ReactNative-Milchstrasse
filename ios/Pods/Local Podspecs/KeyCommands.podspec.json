@@ -4,7 +4,9 @@
   "summary": "iOS UIKeyCommands.",
   "description": "iOS UIKeyCommands.",
   "license": "MIT",
-  "authors": "djorkaeffalexandre",
+  "authors": {
+    "name": "djorkaeffalexandre"
+  },
   "homepage": "https://github.com/RocketChat/react-native-keycommands",
   "source": {
     "git": "https://github.com/RocketChat/react-native-keycommands.git"

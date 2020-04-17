@@ -3,7 +3,9 @@
   "version": "1.0.4",
   "summary": "React Native module that allows you to draw vector graphics",
   "license": "MIT",
-  "authors": "@react-native-community",
+  "authors": {
+    "name": "@react-native-community"
+  },
   "homepage": "https://github.com/react-native-community/react-native-art",
   "platforms": {
     "ios": "9.0",
