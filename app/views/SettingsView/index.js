@@ -135,8 +135,8 @@ class SettingsView extends React.Component {
 	}
 
 	sendEmail = async() => {
-		const subject = encodeURI('React Native App Support');
-		const email = encodeURI('support@rocket.chat');
+		const subject = encodeURI('Milchstrasse App Support');
+		const email = encodeURI('app@milchjugend.ch');
 		const description = encodeURI(`
 			version: ${ getReadableVersion }
 			device: ${ getDeviceModel }
@@ -144,7 +144,7 @@ class SettingsView extends React.Component {
 		try {
 			await Linking.openURL(`mailto:${ email }?subject=${ subject }&body=${ description }`);
 		} catch (e) {
-			showErrorAlert(I18n.t('error-email-send-failed', { message: 'support@rocket.chat' }));
+			showErrorAlert(I18n.t('error-email-send-failed', { message: 'app@milchjugend.ch' }));
 		}
 	}
 

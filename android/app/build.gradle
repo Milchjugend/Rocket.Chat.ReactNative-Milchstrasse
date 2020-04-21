@@ -137,7 +137,7 @@ android {
         applicationId "ch.milchjugend.milchstrasse"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode VERSIONCODE as Integer
+        versionCode 1000000000
         versionName "4.5.1"
         vectorDrawables.useSupportLibrary = true
         manifestPlaceholders = [BugsnagAPIKey: BugsnagAPIKey as String]
