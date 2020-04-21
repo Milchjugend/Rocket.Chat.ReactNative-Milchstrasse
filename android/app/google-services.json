@@ -1,34 +1,34 @@
 {
   "project_info": {
-    "project_number": "115198584049",
-    "firebase_url": "https://rocketchat-reactnative-test.firebaseio.com",
-    "project_id": "rocketchat-reactnative-test",
-    "storage_bucket": "rocketchat-reactnative-test.appspot.com"
+    "project_number": "1018244327953",
+    "firebase_url": "https://milchstrasse-milchjugend.firebaseio.com",
+    "project_id": "milchstrasse-milchjugend",
+    "storage_bucket": "milchstrasse-milchjugend.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:115198584049:android:8be27b1f7c42a2ed",
+        "mobilesdk_app_id": "1:1018244327953:android:0a6b2f57447eb008689fb0",
         "android_client_info": {
           "package_name": "ch.milchjugend.milchstrasse"
         }
       },
       "oauth_client": [
         {
-          "client_id": "115198584049-ack609b1338b827fta26s9rd2ab1aad5.apps.googleusercontent.com",
+          "client_id": "1018244327953-kc6tpjgjidcgikgp61m19bco1tgg8ab8.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAWwowhAfACHBw3YxmDOXY3QyakgjhJLqc"
+          "current_key": "AIzaSyCSUcvhwO_yHl3WiJgUqLgXz4Yr4k6hlA0"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "115198584049-ack609b1338b827fta26s9rd2ab1aad5.apps.googleusercontent.com",
+              "client_id": "1018244327953-kc6tpjgjidcgikgp61m19bco1tgg8ab8.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

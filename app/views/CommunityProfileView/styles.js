@@ -1,25 +1,70 @@
 import { StyleSheet } from 'react-native';
 
-import { COLOR_BACKGROUND_CONTAINER } from '../../constants/colors';
 import sharedStyles from '../Styles';
 
 export default StyleSheet.create({
-	sectionSeparatorBorder: {
-		...sharedStyles.separatorVertical,
-		backgroundColor: COLOR_BACKGROUND_CONTAINER,
-		height: 10
+	container: {
+		flex: 1
 	},
-	listWithoutBorderBottom: {
-		borderBottomWidth: 0
+	safeAreaView: {
+		flex: 1
 	},
-	infoContainer: {
-		padding: 15,
-		paddingBottom: 40,
-		backgroundColor: COLOR_BACKGROUND_CONTAINER
+	list: {
+		flex: 1
 	},
-	infoText: {
+	contentContainer: {
+		paddingTop: 10
+	},
+	readOnly: {
+		justifyContent: 'flex-end',
+		alignItems: 'center',
+		marginVertical: 15
+	},
+	reactionPickerContainer: {
+		borderRadius: 4,
+		flexDirection: 'column',
+		overflow: 'hidden'
+	},
+	announcementTextContainer: {
+		paddingVertical: 12,
+		paddingHorizontal: 15,
+		alignItems: 'center'
+	},
+	announcementTitle: {
+		fontSize: 16,
+		...sharedStyles.textMedium
+	},
+	modalView: {
+		padding: 20,
+		justifyContent: 'center'
+	},
+	modalScrollView: {
+		maxHeight: 100,
+		marginVertical: 20
+	},
+	modalCloseButton: {
+		alignSelf: 'flex-end'
+	},
+	joinRoomContainer: {
+		justifyContent: 'flex-end',
+		alignItems: 'center',
+		marginVertical: 15
+	},
+	joinRoomButton: {
+		width: 107,
+		height: 44,
+		marginTop: 15,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: 2
+	},
+	joinRoomText: {
 		fontSize: 14,
-		...sharedStyles.textColorNormal,
-		...sharedStyles.textRegular
+		...sharedStyles.textMedium
+	},
+	previewMode: {
+		fontSize: 16,
+		...sharedStyles.textMedium
 	}
 });

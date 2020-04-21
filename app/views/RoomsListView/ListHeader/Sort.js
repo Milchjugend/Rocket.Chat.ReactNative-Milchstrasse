@@ -1,35 +1,45 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 
+import Touch from '../../../utils/touch';
 import { CustomIcon } from '../../../lib/Icons';
 import I18n from '../../../i18n';
-import Touch from '../../../utils/touch';
 import styles from '../styles';
+import { themes } from '../../../constants/colors';
+import { withTheme } from '../../../theme';
 
 
-const Sort = React.memo(({ searchLength, sortBy, toggleSort }) => {
-	if (searchLength > 0) {
+const Sort = React.memo(({
+	searching, sortBy, toggleSort, theme
+}) => {
+	if (searching > 0) {
 		return null;
 	}
 	return (
 		<Touch
-			key='rooms-list-view-sort'
 			onPress={toggleSort}
-			style={styles.dropdownContainerHeader}
+			theme={theme}
+			style={{ backgroundColor: themes[theme].headerSecondaryBackground }}
 		>
-			<View style={styles.sortItemContainer}>
-				<Text style={styles.sortToggleText}>{I18n.t('Sorting_by', { key: I18n.t(sortBy === 'alphabetical' ? 'name' : 'activity') })}</Text>
-				<CustomIcon style={styles.sortIcon} size={22} name='sort1' />
+			<View
+				style={[
+					styles.dropdownContainerHeader,
+					{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: themes[theme].separatorColor }
+				]}
+			>
+				<Text style={[styles.sortToggleText, { color: themes[theme].auxiliaryText }]}>{I18n.t('Sorting_by', { key: I18n.t(sortBy === 'alphabetical' ? 'name' : 'activity') })}</Text>
+				<CustomIcon style={[styles.sortIcon, { color: themes[theme].auxiliaryText }]} size={22} name='sort1' />
 			</View>
 		</Touch>
 	);
 });
 
 Sort.propTypes = {
-	searchLength: PropTypes.number,
+	searching: PropTypes.bool,
 	sortBy: PropTypes.string,
+	theme: PropTypes.string,
 	toggleSort: PropTypes.func
 };
 
-export default Sort;
+export default withTheme(Sort);

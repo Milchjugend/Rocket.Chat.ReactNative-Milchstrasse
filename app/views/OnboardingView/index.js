@@ -12,11 +12,12 @@ import { appStart as appStartAction } from '../../actions';
 import I18n from '../../i18n';
 import Button from './Button';
 import styles from './styles';
-import { isIOS, isNotch } from '../../utils/deviceInfo';
+import { isIOS, isNotch, isTablet } from '../../utils/deviceInfo';
 import EventEmitter from '../../utils/events';
 import { CustomIcon } from '../../lib/Icons';
 import StatusBar from '../../containers/StatusBar';
-import { COLOR_PRIMARY } from '../../constants/colors';
+import { themes } from '../../constants/colors';
+import { withTheme } from '../../theme';
 
 class OnboardingView extends React.Component {
 	static navigationOptions = () => ({
@@ -30,14 +31,17 @@ class OnboardingView extends React.Component {
 		currentServer: PropTypes.string,
 		initAdd: PropTypes.func,
 		finishAdd: PropTypes.func,
-		appStart: PropTypes.func
+		appStart: PropTypes.func,
+		theme: PropTypes.string
 	}
 
 	constructor(props) {
 		super(props);
 		BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
 		this.previousServer = props.navigation.getParam('previousServer');
-		Orientation.lockToPortrait();
+		if (!isTablet) {
+			Orientation.lockToPortrait();
+		}
 	}
 
 	componentDidMount() {
@@ -48,7 +52,11 @@ class OnboardingView extends React.Component {
 		EventEmitter.addEventListener('NewServer', this.handleNewServerEvent);
 	}
 
-	shouldComponentUpdate() {
+	shouldComponentUpdate(nextProps) {
+		const { theme } = this.props;
+		if (theme !== nextProps.theme) {
+			return true;
+		}
 		return false;
 	}
 
@@ -92,6 +100,7 @@ class OnboardingView extends React.Component {
 	}
 
 	renderClose = () => {
+		const { theme } = this.props;
 		if (this.previousServer) {
 			let top = 15;
 			if (isIOS) {
@@ -106,7 +115,7 @@ class OnboardingView extends React.Component {
 					<CustomIcon
 						name='cross'
 						size={30}
-						color={COLOR_PRIMARY}
+						color={themes[theme].actionTintColor}
 					/>
 				</TouchableOpacity>
 			);
@@ -115,9 +124,16 @@ class OnboardingView extends React.Component {
 	}
 
 	render() {
+		const { theme } = this.props;
 		return (
-			<SafeAreaView style={styles.container} testID='onboarding-view'>
-				<StatusBar light />
+			<SafeAreaView
+				style={[
+					styles.container,
+					{ backgroundColor: themes[theme].backgroundColor }
+				]}
+				testID='onboarding-view'
+			>
+				<StatusBar theme={theme} />
 				<Image style={styles.onboarding} source={{ uri: 'onboarding' }} fadeDuration={0} />
 				<Text style={styles.title}>{I18n.t('Landing_title')}</Text>
 				<Text style={styles.subtitle}>{I18n.t('Landing_subtitle')}</Text>
@@ -125,9 +141,10 @@ class OnboardingView extends React.Component {
 					<Button
 						type='secondary'
 						title={I18n.t('Connect_to_milchstrasse')}
-						icon={<CustomIcon name='permalink' size={30} color={COLOR_PRIMARY} />}
+						icon={<CustomIcon name='permalink' size={30} color={themes[theme].actionTintColor} />}
 						onPress={this.connectMilchstrasseServer}
 						testID='connect-milchstrasse-button'
+						theme={theme}
 					/>
 				</View>
 				{this.renderClose()}
@@ -148,4 +165,4 @@ const mapDispatchToProps = dispatch => ({
 	appStart: root => dispatch(appStartAction(root))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(OnboardingView);
+export default connect(mapStateToProps, mapDispatchToProps)(withTheme(OnboardingView));

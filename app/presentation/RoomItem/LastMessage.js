@@ -1,19 +1,19 @@
 import React from 'react';
-import { shortnameToUnicode } from 'emoji-toolkit';
 import PropTypes from 'prop-types';
 import _ from 'lodash';
 
 import I18n from '../../i18n';
 import styles from './styles';
 import Markdown from '../../containers/markdown';
+import { themes } from '../../constants/colors';
 
 const formatMsg = ({
-	lastMessage, type, showLastMessage, username
+	lastMessage, type, showLastMessage, username, useRealName
 }) => {
 	if (!showLastMessage) {
 		return '';
 	}
-	if (!lastMessage || lastMessage.pinned) {
+	if (!lastMessage || !lastMessage.u || lastMessage.pinned) {
 		return I18n.t('No_Message');
 	}
 	if (lastMessage.t === 'jitsi_call_started') {
@@ -32,37 +32,38 @@ const formatMsg = ({
 	if (isLastMessageSentByMe) {
 		prefix = I18n.t('You_colon');
 	}	else if (type !== 'd') {
-		prefix = `${ lastMessage.u.username }: `;
+		const { u: { name } } = lastMessage;
+		prefix = `${ useRealName ? name : lastMessage.u.username }: `;
 	}
 
-	let msg = `${ prefix }${ lastMessage.msg.replace(/[\n\t\r]/igm, '') }`;
-	if (msg) {
-		msg = shortnameToUnicode(msg);
-	}
-	return msg;
+	return `${ prefix }${ lastMessage.msg }`;
 };
 
 const arePropsEqual = (oldProps, newProps) => _.isEqual(oldProps, newProps);
 
 const LastMessage = React.memo(({
-	lastMessage, type, showLastMessage, username, alert
+	lastMessage, type, showLastMessage, username, alert, useRealName, theme
 }) => (
 	<Markdown
 		msg={formatMsg({
-			lastMessage, type, showLastMessage, username
+			lastMessage, type, showLastMessage, username, useRealName
 		})}
-		style={[styles.markdownText, alert && styles.markdownTextAlert]}
+		style={[styles.markdownText, { color: alert ? themes[theme].bodyText : themes[theme].auxiliaryText }]}
 		customEmojis={false}
+		useRealName={useRealName}
 		numberOfLines={2}
 		preview
+		theme={theme}
 	/>
 ), arePropsEqual);
 
 LastMessage.propTypes = {
+	theme: PropTypes.string,
 	lastMessage: PropTypes.object,
 	type: PropTypes.string,
 	showLastMessage: PropTypes.bool,
 	username: PropTypes.string,
+	useRealName: PropTypes.bool,
 	alert: PropTypes.bool
 };
 

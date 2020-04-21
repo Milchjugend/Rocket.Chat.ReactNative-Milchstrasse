@@ -6,12 +6,12 @@ import {
 import { connect } from 'react-redux';
 import { SafeAreaView } from 'react-navigation';
 
+import Touch from '../../utils/touch';
 import { leaveRoom as leaveRoomAction } from '../../actions/room';
 import styles from './styles';
 import sharedStyles from '../Styles';
 import Avatar from '../../containers/Avatar';
 import Status from '../../containers/Status';
-import Touch from '../../utils/touch';
 import RocketChat from '../../lib/rocketchat';
 import log from '../../utils/log';
 import RoomTypeIcon from '../../containers/RoomTypeIcon';
@@ -20,13 +20,22 @@ import scrollPersistTaps from '../../utils/scrollPersistTaps';
 import { CustomIcon } from '../../lib/Icons';
 import DisclosureIndicator from '../../containers/DisclosureIndicator';
 import StatusBar from '../../containers/StatusBar';
-import { COLOR_WHITE } from '../../constants/colors';
-
-const renderSeparator = () => <View style={styles.separator} />;
+import { themes } from '../../constants/colors';
+import { withTheme } from '../../theme';
+import { themedHeader } from '../../utils/navigation';
+import { CloseModalButton } from '../../containers/HeaderButton';
+import { getUserSelector } from '../../selectors/login';
 
 class RoomActionsView extends React.Component {
-	static navigationOptions = {
-		title: I18n.t('Actions')
+	static navigationOptions = ({ navigation, screenProps }) => {
+		const options = {
+			...themedHeader(screenProps.theme),
+			title: I18n.t('Actions')
+		};
+		if (screenProps.split) {
+			options.headerLeft = <CloseModalButton navigation={navigation} testID='room-actions-view-close' />;
+		}
+		return options;
 	}
 
 	static propTypes = {
@@ -37,7 +46,8 @@ class RoomActionsView extends React.Component {
 			token: PropTypes.string
 		}),
 		leaveRoom: PropTypes.func,
-		jitsiEnabled: PropTypes.bool
+		jitsiEnabled: PropTypes.bool,
+		theme: PropTypes.string
 	}
 
 	constructor(props) {
@@ -53,9 +63,10 @@ class RoomActionsView extends React.Component {
 			joined: !!room,
 			canViewMembers: false,
 			canAutoTranslate: false,
-			canAddUser: false
+			canAddUser: false,
+			canInviteUser: false
 		};
-		if (room && room.observe) {
+		if (room && room.observe && room.rid) {
 			this.roomObservable = room.observe();
 			this.subscription = this.roomObservable
 				.subscribe((changes) => {
@@ -99,6 +110,7 @@ class RoomActionsView extends React.Component {
 		this.setState({ canAutoTranslate });
 
 		this.canAddUser();
+		this.canInviteUser();
 	}
 
 	componentWillUnmount() {
@@ -128,7 +140,6 @@ class RoomActionsView extends React.Component {
 		}
 	}
 
-	// TODO: move to componentDidMount
 	// eslint-disable-next-line react/sort-comp
 	canAddUser = async() => {
 		const { room, joined } = this.state;
@@ -152,8 +163,15 @@ class RoomActionsView extends React.Component {
 		this.setState({ canAddUser: canAdd });
 	}
 
-	// TODO: move to componentDidMount
-	// eslint-disable-next-line react/sort-comp
+	canInviteUser = async() => {
+		const { room } = this.state;
+		const { rid } = room;
+		const permissions = await RocketChat.hasPermission(['create-invite-links'], rid);
+
+		const canInviteUser = permissions && permissions['create-invite-links'];
+		this.setState({ canInviteUser });
+	}
+
 	canViewMembers = async() => {
 		const { room } = this.state;
 		const { rid, t, broadcast } = room;
@@ -174,7 +192,7 @@ class RoomActionsView extends React.Component {
 
 	get sections() {
 		const {
-			room, membersCount, canViewMembers, canAddUser, joined, canAutoTranslate
+			room, membersCount, canViewMembers, canAddUser, canInviteUser, joined, canAutoTranslate
 		} = this.state;
 		const { jitsiEnabled } = this.props;
 		const {
@@ -304,15 +322,26 @@ class RoomActionsView extends React.Component {
 
 			if (canAddUser) {
 				actions.push({
-					icon: 'user-plus',
-					name: I18n.t('Add_user'),
+					icon: 'plus',
+					name: I18n.t('Add_users'),
 					route: 'SelectedUsersView',
 					params: {
 						nextActionID: 'ADD_USER',
 						rid,
-						title: I18n.t('Add_user')
+						title: I18n.t('Add_users')
 					},
 					testID: 'room-actions-add-user'
+				});
+			}
+			if (canInviteUser) {
+				actions.push({
+					icon: 'user-plus',
+					name: I18n.t('Invite_users'),
+					route: 'InviteUsersView',
+					params: {
+						rid
+					},
+					testID: 'room-actions-invite-user'
 				});
 			}
 			sections[2].data = [...actions, ...sections[2].data];
@@ -332,8 +361,16 @@ class RoomActionsView extends React.Component {
 					renderItem: this.renderItem
 				});
 			}
+		} else if (t === 'l') {
+			sections[2].data = [notificationsAction];
 		}
+
 		return sections;
+	}
+
+	renderSeparator = () => {
+		const { theme } = this.props;
+		return <View style={[styles.separator, { backgroundColor: themes[theme].separatorColor }]} />;
 	}
 
 	updateRoomMember = async() => {
@@ -367,6 +404,9 @@ class RoomActionsView extends React.Component {
 	handleShare = () => {
 		const { room } = this.state;
 		const permalink = RocketChat.getPermalinkChannel(room);
+		if (!permalink) {
+			return;
+		}
 		Share.share({
 			message: permalink
 		});
@@ -396,7 +436,7 @@ class RoomActionsView extends React.Component {
 	renderRoomInfo = ({ item }) => {
 		const { room, member } = this.state;
 		const { name, t, topic } = room;
-		const { baseUrl, user } = this.props;
+		const { baseUrl, user, theme } = this.props;
 
 		return (
 			this.renderTouchableItem([
@@ -414,70 +454,77 @@ class RoomActionsView extends React.Component {
 				</Avatar>,
 				<View key='name' style={styles.roomTitleContainer}>
 					{room.t === 'd'
-						? <Text style={styles.roomTitle}>{room.fname}</Text>
+						? <Text style={[styles.roomTitle, { color: themes[theme].titleText }]} numberOfLines={1}>{room.fname}</Text>
 						: (
 							<View style={styles.roomTitleRow}>
-								<RoomTypeIcon type={room.prid ? 'discussion' : room.t} />
-								<Text style={styles.roomTitle}>{room.prid ? room.fname : room.name}</Text>
+								<RoomTypeIcon type={room.prid ? 'discussion' : room.t} theme={theme} />
+								<Text style={[styles.roomTitle, { color: themes[theme].titleText }]} numberOfLines={1}>{room.prid ? room.fname : room.name}</Text>
 							</View>
 						)
 					}
-					<Text style={styles.roomDescription} ellipsizeMode='tail' numberOfLines={1}>{t === 'd' ? `@${ name }` : topic}</Text>
+					<Text style={[styles.roomDescription, { color: themes[theme].auxiliaryText }]} ellipsizeMode='tail' numberOfLines={1}>{t === 'd' ? `@${ name }` : topic}</Text>
 				</View>,
-				<DisclosureIndicator key='disclosure-indicator' />
+				<DisclosureIndicator theme={theme} key='disclosure-indicator' />
 			], item)
 		);
 	}
 
-	renderTouchableItem = (subview, item) => (
-		<Touch
-			onPress={() => this.onPressTouchable(item)}
-			underlayColor={COLOR_WHITE}
-			activeOpacity={0.5}
-			accessibilityLabel={item.name}
-			accessibilityTraits='button'
-			testID={item.testID}
-		>
-			<View style={[styles.sectionItem, item.disabled && styles.sectionItemDisabled]}>
-				{subview}
-			</View>
-		</Touch>
-	)
+	renderTouchableItem = (subview, item) => {
+		const { theme } = this.props;
+		return (
+			<Touch
+				onPress={() => this.onPressTouchable(item)}
+				style={{ backgroundColor: themes[theme].backgroundColor }}
+				accessibilityLabel={item.name}
+				accessibilityTraits='button'
+				testID={item.testID}
+				theme={theme}
+			>
+				<View style={[styles.sectionItem, item.disabled && styles.sectionItemDisabled]}>
+					{subview}
+				</View>
+			</Touch>
+		);
+	}
 
 	renderItem = ({ item }) => {
+		const { theme } = this.props;
+		const colorDanger = { color: themes[theme].dangerColor };
 		const subview = item.type === 'danger' ? [
-			<CustomIcon key='icon' name={item.icon} size={24} style={[styles.sectionItemIcon, styles.textColorDanger]} />,
-			<Text key='name' style={[styles.sectionItemName, styles.textColorDanger]}>{ item.name }</Text>
+			<CustomIcon key='icon' name={item.icon} size={24} style={[styles.sectionItemIcon, colorDanger]} />,
+			<Text key='name' style={[styles.sectionItemName, colorDanger]}>{ item.name }</Text>
 		] : [
-			<CustomIcon key='left-icon' name={item.icon} size={24} style={styles.sectionItemIcon} />,
-			<Text key='name' style={styles.sectionItemName}>{ item.name }</Text>,
-			item.description ? <Text key='description' style={styles.sectionItemDescription}>{ item.description }</Text> : null,
-			<DisclosureIndicator key='disclosure-indicator' />
+			<CustomIcon key='left-icon' name={item.icon} size={24} style={[styles.sectionItemIcon, { color: themes[theme].bodyText }]} />,
+			<Text key='name' style={[styles.sectionItemName, { color: themes[theme].bodyText }]}>{ item.name }</Text>,
+			item.description ? <Text key='description' style={[styles.sectionItemDescription, { color: themes[theme].auxiliaryText }]}>{ item.description }</Text> : null,
+			<DisclosureIndicator theme={theme} key='disclosure-indicator' />
 		];
 		return this.renderTouchableItem(subview, item);
 	}
 
 	renderSectionSeparator = (data) => {
+		const { theme } = this.props;
 		if (data.trailingItem) {
-			return <View style={[styles.sectionSeparator, data.leadingSection && styles.sectionSeparatorBorder]} />;
+			return <View style={[styles.sectionSeparator, data.leadingSection && styles.sectionSeparatorBorder, { backgroundColor: themes[theme].auxiliaryBackground, borderColor: themes[theme].separatorColor }]} />;
 		}
 		if (!data.trailingSection) {
-			return <View style={styles.sectionSeparatorBorder} />;
+			return <View style={[styles.sectionSeparatorBorder, { backgroundColor: themes[theme].auxiliaryBackground, borderColor: themes[theme].separatorColor }]} />;
 		}
 		return null;
 	}
 
 	render() {
+		const { theme } = this.props;
 		return (
 			<SafeAreaView style={styles.container} testID='room-actions-view' forceInset={{ vertical: 'never' }}>
-				<StatusBar />
+				<StatusBar theme={theme} />
 				<SectionList
-					contentContainerStyle={styles.contentContainer}
-					style={styles.container}
+					contentContainerStyle={[styles.contentContainer, { backgroundColor: themes[theme].auxiliaryBackground }]}
+					style={[styles.container, { backgroundColor: themes[theme].auxiliaryBackground }]}
 					stickySectionHeadersEnabled={false}
 					sections={this.sections}
 					SectionSeparatorComponent={this.renderSectionSeparator}
-					ItemSeparatorComponent={renderSeparator}
+					ItemSeparatorComponent={this.renderSeparator}
 					keyExtractor={item => item.name}
 					testID='room-actions-list'
 					{...scrollPersistTaps}
@@ -488,11 +535,8 @@ class RoomActionsView extends React.Component {
 }
 
 const mapStateToProps = state => ({
-	user: {
-		id: state.login.user && state.login.user.id,
-		token: state.login.user && state.login.user.token
-	},
-	baseUrl: state.settings.Site_Url || state.server ? state.server.server : '',
+	user: getUserSelector(state),
+	baseUrl: state.server.server,
 	jitsiEnabled: state.settings.Jitsi_Enabled || false
 });
 
@@ -500,4 +544,4 @@ const mapDispatchToProps = dispatch => ({
 	leaveRoom: (rid, t) => dispatch(leaveRoomAction(rid, t))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(RoomActionsView);
+export default connect(mapStateToProps, mapDispatchToProps)(withTheme(RoomActionsView));

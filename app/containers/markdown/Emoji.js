@@ -1,14 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Text } from 'react-native';
-import { shortnameToUnicode } from 'emoji-toolkit';
 
+import shortnameToUnicode from '../../utils/shortnameToUnicode';
 import CustomEmoji from '../EmojiPicker/CustomEmoji';
+import { themes } from '../../constants/colors';
 
 import styles from './styles';
 
 const Emoji = React.memo(({
-	emojiName, literal, isMessageContainsOnlyEmoji, getCustomEmoji, baseUrl, customEmojis, style = []
+	emojiName, literal, isMessageContainsOnlyEmoji, getCustomEmoji, baseUrl, customEmojis, style = [], theme
 }) => {
 	const emojiUnicode = shortnameToUnicode(literal);
 	const emoji = getCustomEmoji && getCustomEmoji(emojiName);
@@ -24,6 +25,7 @@ const Emoji = React.memo(({
 	return (
 		<Text
 			style={[
+				{ color: themes[theme].bodyText },
 				isMessageContainsOnlyEmoji ? styles.textBig : styles.text,
 				...style
 			]}
@@ -40,7 +42,8 @@ Emoji.propTypes = {
 	getCustomEmoji: PropTypes.func,
 	baseUrl: PropTypes.string,
 	customEmojis: PropTypes.bool,
-	style: PropTypes.array
+	style: PropTypes.array,
+	theme: PropTypes.string
 };
 
 export default Emoji;

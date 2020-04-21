@@ -1,40 +1,44 @@
 import { StyleSheet } from 'react-native';
 
 import sharedStyles from '../Styles';
-import { COLOR_BACKGROUND_CONTAINER, COLOR_WHITE } from '../../constants/colors';
 
 export default StyleSheet.create({
 	container: {
-		flex: 1,
-		backgroundColor: COLOR_WHITE
+		flex: 1
 	},
 	scroll: {
 		flex: 1,
-		flexDirection: 'column',
-		backgroundColor: COLOR_WHITE,
-		padding: 10
+		flexDirection: 'column'
 	},
 	item: {
-		padding: 10,
+		paddingVertical: 10,
+		paddingHorizontal: 20,
 		justifyContent: 'center'
 	},
 	avatarContainer: {
-		height: 250,
+		height: 240,
 		flexDirection: 'column',
 		alignItems: 'center',
-		justifyContent: 'center'
+		justifyContent: 'center',
+		marginBottom: 20
+	},
+	avatarContainerDirectRoom: {
+		height: 320
 	},
 	avatar: {
 		marginHorizontal: 10
 	},
 	roomTitleContainer: {
 		paddingTop: 20,
-		flexDirection: 'row'
+		alignItems: 'center'
 	},
 	roomTitle: {
-		fontSize: 18,
-		...sharedStyles.textColorNormal,
+		fontSize: 20,
 		...sharedStyles.textMedium
+	},
+	roomUsername: {
+		fontSize: 18,
+		...sharedStyles.textRegular
 	},
 	roomTitleRow: {
 		flexDirection: 'row',
@@ -48,12 +52,10 @@ export default StyleSheet.create({
 	itemLabel: {
 		marginBottom: 10,
 		fontSize: 14,
-		...sharedStyles.textColorNormal,
 		...sharedStyles.textMedium
 	},
 	itemContent: {
 		fontSize: 14,
-		...sharedStyles.textColorDescription,
 		...sharedStyles.textRegular
 	},
 	itemContent__empty: {
@@ -65,14 +67,24 @@ export default StyleSheet.create({
 	},
 	roleBadge: {
 		padding: 6,
-		backgroundColor: COLOR_BACKGROUND_CONTAINER,
 		borderRadius: 2,
 		marginRight: 6,
 		marginBottom: 6
 	},
 	role: {
 		fontSize: 14,
-		...sharedStyles.textColorNormal,
 		...sharedStyles.textRegular
+	},
+	roomButtonsContainer: {
+		flexDirection: 'row',
+		paddingTop: 30
+	},
+	roomButton: {
+		alignItems: 'center',
+		paddingHorizontal: 20,
+		justifyContent: 'space-between'
+	},
+	roomButtonText: {
+		marginTop: 5
 	}
 });

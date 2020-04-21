@@ -8,12 +8,14 @@ import {
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { toggleMarkdown as toggleMarkdownAction } from '../../actions/markdown';
+import { HeaderBackButton } from 'react-navigation-stack';
 import { toggleCrashReport as toggleCrashReportAction } from '../../actions/crashReport';
 import { DrawerButton } from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
 import styles from './styles';
-import sharedStyles from '../Styles';
+import { themedHeader } from '../../utils/navigation';
+import { themes } from '../../constants/colors';
+import I18n from '../../i18n';
 
 const ItemInfo = React.memo(({ info }) => (
 	<View style={styles.infoContainer}>
@@ -25,10 +27,18 @@ ItemInfo.propTypes = {
 };
 
 class AgendaView extends React.Component {
-	static navigationOptions = ({ navigation }) => ({
-		headerLeft: <DrawerButton navigation={navigation} />,
-		title: navigation.getParam('title', 'Milchstrasse')
-	});
+	static navigationOptions = ({ navigation, screenProps }) => ({
+		...themedHeader(screenProps.theme),
+		headerLeft: screenProps.split ? (
+			<HeaderBackButton
+				onPress={() => navigation.navigate('SettingsView')}
+				tintColor={themes[screenProps.theme].headerTintColor}
+			/>
+		) : (
+			<DrawerButton navigation={navigation} />
+		),
+		title: I18n.t('Agenda')
+	})
 
 	constructor(props) {
 		super(props);
@@ -46,7 +56,7 @@ class AgendaView extends React.Component {
 	render() {
 		const { visible } = this.state;
 		return (
-			<SafeAreaView style={sharedStyles.listSafeArea} testID='settings-view'>
+			<SafeAreaView style={styles.container} testID='settings-view'>
 				<StatusBar />
 				<WebView
 					onLoadStart={() => (this.showSpinner())}
@@ -75,12 +85,10 @@ class AgendaView extends React.Component {
 
 const mapStateToProps = state => ({
 	server: state.server,
-	useMarkdown: state.markdown.useMarkdown,
 	allowCrashReport: state.crashReport.allowCrashReport
 });
 
 const mapDispatchToProps = dispatch => ({
-	toggleMarkdown: params => dispatch(toggleMarkdownAction(params)),
 	toggleCrashReport: params => dispatch(toggleCrashReportAction(params))
 });
 

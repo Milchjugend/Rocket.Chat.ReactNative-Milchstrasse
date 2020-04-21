@@ -1,10 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import {
-	View, TextInput, FlatList, Text, TouchableOpacity, Alert, ScrollView
-} from 'react-native';
+import { View, Alert, Keyboard } from 'react-native';
 import { connect } from 'react-redux';
-import { shortnameToUnicode } from 'emoji-toolkit';
 import { KeyboardAccessoryView } from 'react-native-keyboard-input';
 import ImagePicker from 'react-native-image-crop-picker';
 import equal from 'deep-equal';
@@ -12,12 +9,12 @@ import DocumentPicker from 'react-native-document-picker';
 import ActionSheet from 'react-native-action-sheet';
 import { Q } from '@nozbe/watermelondb';
 
+import { generateTriggerId } from '../../lib/methods/actions';
+import TextInput from '../../presentation/TextInput';
 import { userTyping as userTypingAction } from '../../actions/room';
 import RocketChat from '../../lib/rocketchat';
 import styles from './styles';
 import database from '../../lib/database';
-import Avatar from '../Avatar';
-import CustomEmoji from '../EmojiPicker/CustomEmoji';
 import { emojis } from '../../emojis';
 import Recording from './Recording';
 import UploadModal from './UploadModal';
@@ -25,17 +22,29 @@ import log from '../../utils/log';
 import I18n from '../../i18n';
 import ReplyPreview from './ReplyPreview';
 import debounce from '../../utils/debounce';
-import { COLOR_TEXT_DESCRIPTION } from '../../constants/colors';
+import { themes } from '../../constants/colors';
 import LeftButtons from './LeftButtons';
 import RightButtons from './RightButtons';
-import { isAndroid } from '../../utils/deviceInfo';
-import CommandPreview from './CommandPreview';
+import { isAndroid, isTablet } from '../../utils/deviceInfo';
 import { canUploadFile } from '../../utils/media';
-
-const MENTIONS_TRACKING_TYPE_USERS = '@';
-const MENTIONS_TRACKING_TYPE_EMOJIS = ':';
-const MENTIONS_TRACKING_TYPE_COMMANDS = '/';
-const MENTIONS_COUNT_TO_DISPLAY = 4;
+import EventEmiter from '../../utils/events';
+import {
+	KEY_COMMAND,
+	handleCommandTyping,
+	handleCommandSubmit,
+	handleCommandShowUpload
+} from '../../commands';
+import Mentions from './Mentions';
+import MessageboxContext from './Context';
+import {
+	MENTIONS_TRACKING_TYPE_EMOJIS,
+	MENTIONS_TRACKING_TYPE_COMMANDS,
+	MENTIONS_COUNT_TO_DISPLAY,
+	MENTIONS_TRACKING_TYPE_USERS
+} from './constants';
+import CommandsPreview from './CommandsPreview';
+import { Review } from '../../utils/review';
+import { getUserSelector } from '../../selectors/login';
 
 const imagePickerConfig = {
 	cropping: true,
@@ -76,12 +85,15 @@ class MessageBox extends Component {
 		replyWithMention: PropTypes.bool,
 		FileUpload_MediaTypeWhiteList: PropTypes.string,
 		FileUpload_MaxFileSize: PropTypes.number,
+		Message_AudioRecorderEnabled: PropTypes.bool,
 		getCustomEmoji: PropTypes.func,
 		editCancel: PropTypes.func.isRequired,
 		editRequest: PropTypes.func.isRequired,
 		onSubmit: PropTypes.func.isRequired,
 		typing: PropTypes.func,
-		replyCancel: PropTypes.func
+		theme: PropTypes.string,
+		replyCancel: PropTypes.func,
+		navigation: PropTypes.object
 	}
 
 	constructor(props) {
@@ -96,10 +108,11 @@ class MessageBox extends Component {
 				isVisible: false
 			},
 			commandPreview: [],
-			showCommandPreview: false
+			showCommandPreview: false,
+			command: {}
 		};
-		this.onEmojiSelected = this.onEmojiSelected.bind(this);
 		this.text = '';
+		this.focused = false;
 		this.fileOptions = [
 			I18n.t('Cancel'),
 			I18n.t('Take_a_photo'),
@@ -128,7 +141,7 @@ class MessageBox extends Component {
 
 	async componentDidMount() {
 		const db = database.active;
-		const { rid, tmid } = this.props;
+		const { rid, tmid, navigation } = this.props;
 		let msg;
 		try {
 			const threadsCollection = db.collections.get('threads');
@@ -162,6 +175,16 @@ class MessageBox extends Component {
 		if (isAndroid) {
 			require('./EmojiKeyboard');
 		}
+
+		if (isTablet) {
+			EventEmiter.addEventListener(KEY_COMMAND, this.handleCommands);
+		}
+
+		this.didFocusListener = navigation.addListener('didFocus', () => {
+			if (this.tracking && this.tracking.resetTracking) {
+				this.tracking.resetTracking();
+			}
+		});
 	}
 
 	componentWillReceiveProps(nextProps) {
@@ -187,8 +210,11 @@ class MessageBox extends Component {
 		} = this.state;
 
 		const {
-			roomType, replying, editing, isFocused
+			roomType, replying, editing, isFocused, theme
 		} = this.props;
+		if (nextProps.theme !== theme) {
+			return true;
+		}
 		if (!isFocused()) {
 			return false;
 		}
@@ -239,12 +265,19 @@ class MessageBox extends Component {
 		if (this.getSlashCommands && this.getSlashCommands.stop) {
 			this.getSlashCommands.stop();
 		}
+		if (this.didFocusListener && this.didFocusListener.remove) {
+			this.didFocusListener.remove();
+		}
+		if (isTablet) {
+			EventEmiter.removeListener(KEY_COMMAND, this.handleCommands);
+		}
 	}
 
 	onChangeText = (text) => {
 		const isTextEmpty = text.length === 0;
 		this.setShowSend(!isTextEmpty);
 		this.debouncedOnChangeText(text);
+		this.setInput(text);
 	}
 
 	// eslint-disable-next-line react/sort-comp
@@ -253,7 +286,6 @@ class MessageBox extends Component {
 		const isTextEmpty = text.length === 0;
 		// this.setShowSend(!isTextEmpty);
 		this.handleTyping(!isTextEmpty);
-		this.setInput(text);
 		// matches if their is text that stats with '/' and group the command and params so we can use it "/command params"
 		const slashCommand = text.match(/^\/([a-z0-9._-]+) (.+)/im);
 		if (slashCommand) {
@@ -262,7 +294,7 @@ class MessageBox extends Component {
 			try {
 				const command = await commandsCollection.find(name);
 				if (command.providesPreview) {
-					return this.setCommandPreview(name, params);
+					return this.setCommandPreview(command, name, params);
 				}
 			} catch (e) {
 				console.log('Slash command not found');
@@ -321,16 +353,22 @@ class MessageBox extends Component {
 	}
 
 	onPressCommandPreview = (item) => {
-		const { rid } = this.props;
+		const { command } = this.state;
+		const {
+			rid, tmid, message: { id: messageTmid }, replyCancel
+		} = this.props;
 		const { text } = this;
-		const command = text.substr(0, text.indexOf(' ')).slice(1);
+		const name = text.substr(0, text.indexOf(' ')).slice(1);
 		const params = text.substr(text.indexOf(' ') + 1) || 'params';
-		this.setState({ commandPreview: [], showCommandPreview: false });
+		this.setState({ commandPreview: [], showCommandPreview: false, command: {} });
 		this.stopTrackingMention();
 		this.clearInput();
 		this.handleTyping(false);
 		try {
-			RocketChat.executeCommandPreview(command, params, rid, item);
+			const { appId } = command;
+			const triggerId = generateTriggerId(appId);
+			RocketChat.executeCommandPreview(name, params, rid, item, triggerId, tmid || messageTmid);
+			replyCancel();
 		} catch (e) {
 			log(e);
 		}
@@ -434,13 +472,13 @@ class MessageBox extends Component {
 		}, 1000);
 	}
 
-	setCommandPreview = async(command, params) => {
+	setCommandPreview = async(command, name, params) => {
 		const { rid } = this.props;
 		try	{
-			const { preview } = await RocketChat.getCommandPreview(command, rid, params);
-			this.setState({ commandPreview: preview.items, showCommandPreview: true });
+			const { preview } = await RocketChat.getCommandPreview(name, rid, params);
+			this.setState({ commandPreview: preview.items, showCommandPreview: true, command });
 		} catch (e) {
-			this.setState({ commandPreview: [], showCommandPreview: true });
+			this.setState({ commandPreview: [], showCommandPreview: true, command: {} });
 			log(e);
 		}
 	}
@@ -453,7 +491,10 @@ class MessageBox extends Component {
 	}
 
 	setShowSend = (showSend) => {
-		this.setState({ showSend });
+		const { showSend: prevShowSend } = this.state;
+		if (prevShowSend !== showSend) {
+			this.setState({ showSend });
+		}
 	}
 
 	clearInput = () => {
@@ -473,7 +514,7 @@ class MessageBox extends Component {
 
 	sendMediaMessage = async(file) => {
 		const {
-			rid, tmid, baseUrl: server, user
+			rid, tmid, baseUrl: server, user, message: { id: messageTmid }, replyCancel
 		} = this.props;
 		this.setState({ file: { isVisible: false } });
 		const fileInfo = {
@@ -485,7 +526,9 @@ class MessageBox extends Component {
 			path: file.path
 		};
 		try {
-			await RocketChat.sendFileMessage(rid, fileInfo, tmid, server, user);
+			replyCancel();
+			await RocketChat.sendFileMessage(rid, fileInfo, tmid || messageTmid, server, user);
+			Review.pushPositiveEvent();
 		} catch (e) {
 			log(e);
 		}
@@ -498,7 +541,7 @@ class MessageBox extends Component {
 				this.showUploadModal(image);
 			}
 		} catch (e) {
-			log(e);
+			// Do nothing
 		}
 	}
 
@@ -509,7 +552,7 @@ class MessageBox extends Component {
 				this.showUploadModal(video);
 			}
 		} catch (e) {
-			log(e);
+			// Do nothing
 		}
 	}
 
@@ -520,7 +563,7 @@ class MessageBox extends Component {
 				this.showUploadModal(image);
 			}
 		} catch (e) {
-			log(e);
+			// Do nothing
 		}
 	}
 
@@ -544,7 +587,6 @@ class MessageBox extends Component {
 			}
 		}
 	}
-
 
 	showUploadModal = (file) => {
 		this.setState({ file: { ...file, isVisible: true } });
@@ -620,11 +662,12 @@ class MessageBox extends Component {
 
 	submit = async() => {
 		const {
-			onSubmit, rid: roomId
+			onSubmit, rid: roomId, tmid
 		} = this.props;
 		const message = this.text;
 
 		this.clearInput();
+		this.debouncedOnChangeText.stop();
 		this.closeEmoji();
 		this.stopTrackingMention();
 		this.handleTyping(false);
@@ -633,7 +676,7 @@ class MessageBox extends Component {
 		}
 
 		const {
-			editing, replying
+			editing, replying, message: { id: messageTmid }, replyCancel
 		} = this.props;
 
 		// Slash command
@@ -647,7 +690,10 @@ class MessageBox extends Component {
 			if (slashCommand.length > 0) {
 				try {
 					const messageWithoutCommand = message.replace(/([^\s]+)/, '').trim();
-					RocketChat.runSlashCommand(command, roomId, messageWithoutCommand);
+					const [{ appId }] = slashCommand;
+					const triggerId = generateTriggerId(appId);
+					RocketChat.runSlashCommand(command, roomId, messageWithoutCommand, triggerId, tmid || messageTmid);
+					replyCancel();
 				} catch (e) {
 					log(e);
 				}
@@ -664,7 +710,7 @@ class MessageBox extends Component {
 		// Reply
 		} else if (replying) {
 			const {
-				message: replyingMessage, replyCancel, threadsEnabled, replyWithMention
+				message: replyingMessage, threadsEnabled, replyWithMention
 			} = this.props;
 
 			// Thread
@@ -726,180 +772,60 @@ class MessageBox extends Component {
 		});
 	}
 
-	renderFixedMentionItem = item => (
-		<TouchableOpacity
-			style={styles.mentionItem}
-			onPress={() => this.onPressMention(item)}
-		>
-			<Text style={styles.fixedMentionAvatar}>{item.username}</Text>
-			<Text style={styles.mentionText}>{item.username === 'here' ? I18n.t('Notify_active_in_this_room') : I18n.t('Notify_all_in_this_room')}</Text>
-		</TouchableOpacity>
-	)
-
-	renderMentionEmoji = (item) => {
-		const { baseUrl } = this.props;
-
-		if (item.name) {
-			return (
-				<CustomEmoji
-					key='mention-item-avatar'
-					style={styles.mentionItemCustomEmoji}
-					emoji={item}
-					baseUrl={baseUrl}
-				/>
-			);
-		}
-		return (
-			<Text
-				key='mention-item-avatar'
-				style={styles.mentionItemEmoji}
-			>
-				{shortnameToUnicode(`:${ item }:`)}
-			</Text>
-		);
-	}
-
-	renderMentionItem = ({ item }) => {
-		const { trackingType } = this.state;
-		const { baseUrl, user } = this.props;
-
-		if (item.username === 'all' || item.username === 'here') {
-			return this.renderFixedMentionItem(item);
-		}
-		const defineTestID = (type) => {
-			switch (type) {
-				case MENTIONS_TRACKING_TYPE_EMOJIS:
-					return `mention-item-${ item.name || item }`;
-				case MENTIONS_TRACKING_TYPE_COMMANDS:
-					return `mention-item-${ item.command || item }`;
-				default:
-					return `mention-item-${ item.username || item.name || item }`;
+	handleCommands = ({ event }) => {
+		if (handleCommandTyping(event)) {
+			if (this.focused) {
+				Keyboard.dismiss();
+			} else {
+				this.component.focus();
 			}
-		};
-
-		const testID = defineTestID(trackingType);
-
-		return (
-			<TouchableOpacity
-				style={styles.mentionItem}
-				onPress={() => this.onPressMention(item)}
-				testID={testID}
-			>
-
-				{(() => {
-					switch (trackingType) {
-						case MENTIONS_TRACKING_TYPE_EMOJIS:
-							return (
-								<>
-									{this.renderMentionEmoji(item)}
-									<Text key='mention-item-name' style={styles.mentionText}>:{ item.name || item }:</Text>
-								</>
-							);
-						case MENTIONS_TRACKING_TYPE_COMMANDS:
-							return (
-								<>
-									<Text key='mention-item-command' style={styles.slash}>/</Text>
-									<Text key='mention-item-param'>{ item.command}</Text>
-								</>
-							);
-						default:
-							return (
-								<>
-									<Avatar
-										key='mention-item-avatar'
-										style={styles.avatar}
-										text={item.username || item.name}
-										size={30}
-										type={item.t}
-										baseUrl={baseUrl}
-										userId={user.id}
-										token={user.token}
-									/>
-									<Text key='mention-item-name' style={styles.mentionText}>{ item.username || item.name || item }</Text>
-								</>
-							);
-					}
-				})()
-				}
-			</TouchableOpacity>
-		);
+			this.focused = !this.focused;
+		} else if (handleCommandSubmit(event)) {
+			this.submit();
+		} else if (handleCommandShowUpload(event)) {
+			this.showFileActions();
+		}
 	}
-
-	renderMentions = () => {
-		const { mentions, trackingType } = this.state;
-		if (!trackingType) {
-			return null;
-		}
-		return (
-			<ScrollView
-				testID='messagebox-container'
-				style={styles.scrollViewMention}
-				keyboardShouldPersistTaps='always'
-			>
-				<FlatList
-					style={styles.mentionList}
-					data={mentions}
-					extraData={mentions}
-					renderItem={this.renderMentionItem}
-					keyExtractor={item => item.id || item.username || item.command || item}
-					keyboardShouldPersistTaps='always'
-				/>
-			</ScrollView>
-		);
-	};
-
-	renderCommandPreviewItem = ({ item }) => (
-		<CommandPreview item={item} onPress={this.onPressCommandPreview} />
-	);
-
-	renderCommandPreview = () => {
-		const { commandPreview, showCommandPreview } = this.state;
-		if (!showCommandPreview) {
-			return null;
-		}
-		return (
-			<View key='commandbox-container' testID='commandbox-container'>
-				<FlatList
-					style={styles.mentionList}
-					data={commandPreview}
-					renderItem={this.renderCommandPreviewItem}
-					keyExtractor={item => item.id}
-					keyboardShouldPersistTaps='always'
-					horizontal
-					showsHorizontalScrollIndicator={false}
-				/>
-			</View>
-		);
-	}
-
-	renderReplyPreview = () => {
-		const {
-			message, replying, replyCancel, user, getCustomEmoji
-		} = this.props;
-		if (!replying) {
-			return null;
-		}
-		return <ReplyPreview key='reply-preview' message={message} close={replyCancel} username={user.username} getCustomEmoji={getCustomEmoji} />;
-	};
 
 	renderContent = () => {
-		const { recording, showEmojiKeyboard, showSend } = this.state;
-		const { editing } = this.props;
+		const {
+			recording, showEmojiKeyboard, showSend, mentions, trackingType, commandPreview, showCommandPreview
+		} = this.state;
+		const {
+			editing, message, replying, replyCancel, user, getCustomEmoji, theme, Message_AudioRecorderEnabled
+		} = this.props;
+
+		const isAndroidTablet = isTablet && isAndroid ? {
+			multiline: false,
+			onSubmitEditing: this.submit,
+			returnKeyType: 'send'
+		} : {};
 
 		if (recording) {
-			return (<Recording onFinish={this.finishAudioMessage} />);
+			return <Recording theme={theme} onFinish={this.finishAudioMessage} />;
 		}
 		return (
 			<>
-				{this.renderCommandPreview()}
-				{this.renderMentions()}
-				<View style={styles.composer} key='messagebox'>
-					{this.renderReplyPreview()}
+				<CommandsPreview commandPreview={commandPreview} showCommandPreview={showCommandPreview} />
+				<Mentions mentions={mentions} trackingType={trackingType} theme={theme} />
+				<View style={[styles.composer, { borderTopColor: themes[theme].separatorColor }]}>
+					<ReplyPreview
+						message={message}
+						close={replyCancel}
+						username={user.username}
+						replying={replying}
+						getCustomEmoji={getCustomEmoji}
+						theme={theme}
+					/>
 					<View
-						style={[styles.textArea, editing && styles.editing]}
+						style={[
+							styles.textArea,
+							{ backgroundColor: themes[theme].messageboxBackground }, editing && { backgroundColor: themes[theme].chatComponentBackground }
+						]}
 						testID='messagebox'
 					>
 						<LeftButtons
+							theme={theme}
 							showEmojiKeyboard={showEmojiKeyboard}
 							editing={editing}
 							showFileActions={this.showFileActions}
@@ -918,13 +844,16 @@ class MessageBox extends Component {
 							underlineColorAndroid='transparent'
 							defaultValue=''
 							multiline
-							placeholderTextColor={COLOR_TEXT_DESCRIPTION}
 							testID='messagebox-input'
+							theme={theme}
+							{...isAndroidTablet}
 						/>
 						<RightButtons
+							theme={theme}
 							showSend={showSend}
 							submit={this.submit}
 							recordAudioMessage={this.recordAudioMessage}
+							recordAudioMessageEnabled={Message_AudioRecorderEnabled}
 							showFileActions={this.showFileActions}
 						/>
 					</View>
@@ -936,9 +865,18 @@ class MessageBox extends Component {
 	render() {
 		console.count(`${ this.constructor.name }.render calls`);
 		const { showEmojiKeyboard, file } = this.state;
+		const { user, baseUrl, theme } = this.props;
 		return (
-			<>
+			<MessageboxContext.Provider
+				value={{
+					user,
+					baseUrl,
+					onPressMention: this.onPressMention,
+					onPressCommandPreview: this.onPressCommandPreview
+				}}
+			>
 				<KeyboardAccessoryView
+					ref={ref => this.tracking = ref}
 					renderContent={this.renderContent}
 					kbInputRef={this.component}
 					kbComponent={showEmojiKeyboard ? 'EmojiKeyboard' : null}
@@ -948,6 +886,7 @@ class MessageBox extends Component {
 					// revealKeyboardInteractive
 					requiresSameParentToManageScrollView
 					addBottomView
+					bottomViewColor={themes[theme].messageboxBackground}
 				/>
 				<UploadModal
 					isVisible={(file && file.isVisible)}
@@ -955,21 +894,18 @@ class MessageBox extends Component {
 					close={() => this.setState({ file: {} })}
 					submit={this.sendMediaMessage}
 				/>
-			</>
+			</MessageboxContext.Provider>
 		);
 	}
 }
 
 const mapStateToProps = state => ({
-	baseUrl: state.settings.Site_Url || state.server ? state.server.server : '',
+	baseUrl: state.server.server,
 	threadsEnabled: state.settings.Threads_enabled,
-	user: {
-		id: state.login.user && state.login.user.id,
-		username: state.login.user && state.login.user.username,
-		token: state.login.user && state.login.user.token
-	},
+	user: getUserSelector(state),
 	FileUpload_MediaTypeWhiteList: state.settings.FileUpload_MediaTypeWhiteList,
-	FileUpload_MaxFileSize: state.settings.FileUpload_MaxFileSize
+	FileUpload_MaxFileSize: state.settings.FileUpload_MaxFileSize,
+	Message_AudioRecorderEnabled: state.settings.Message_AudioRecorderEnabled
 });
 
 const dispatchToProps = ({

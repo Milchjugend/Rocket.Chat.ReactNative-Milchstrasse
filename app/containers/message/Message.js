@@ -5,12 +5,12 @@ import Touchable from 'react-native-platform-touchable';
 
 import User from './User';
 import styles from './styles';
-import sharedStyles from '../../views/Styles';
 import RepliedThread from './RepliedThread';
 import MessageAvatar from './MessageAvatar';
 import Attachments from './Attachments';
 import Urls from './Urls';
 import Thread from './Thread';
+import Blocks from './Blocks';
 import Reactions from './Reactions';
 import Broadcast from './Broadcast';
 import Discussion from './Discussion';
@@ -36,6 +36,16 @@ const MessageInner = React.memo((props) => {
 			</>
 		);
 	}
+	if (props.blocks && props.blocks.length) {
+		return (
+			<>
+				<User {...props} />
+				<Blocks {...props} />
+				<Thread {...props} />
+				<Reactions {...props} />
+			</>
+		);
+	}
 	return (
 		<>
 			<User {...props} />
@@ -56,7 +66,7 @@ const Message = React.memo((props) => {
 		return (
 			<View style={[styles.container, props.style]}>
 				{thread}
-				<View style={[styles.flex, sharedStyles.alignItemsCenter]}>
+				<View style={[styles.flex, styles.center]}>
 					<MessageAvatar small {...props} />
 					<View
 						style={[
@@ -85,6 +95,7 @@ const Message = React.memo((props) => {
 				<ReadReceipt
 					isReadReceiptEnabled={props.isReadReceiptEnabled}
 					unread={props.unread}
+					theme={props.theme}
 				/>
 			</View>
 		</View>
@@ -134,11 +145,13 @@ Message.propTypes = {
 	onLongPress: PropTypes.func,
 	onPress: PropTypes.func,
 	isReadReceiptEnabled: PropTypes.bool,
-	unread: PropTypes.bool
+	unread: PropTypes.bool,
+	theme: PropTypes.string
 };
 
 MessageInner.propTypes = {
-	type: PropTypes.string
+	type: PropTypes.string,
+	blocks: PropTypes.array
 };
 
 export default MessageTouchable;

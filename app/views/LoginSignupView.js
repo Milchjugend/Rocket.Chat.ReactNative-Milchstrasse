@@ -6,23 +6,29 @@ import {
 import { connect } from 'react-redux';
 import { Base64 } from 'js-base64';
 import { SafeAreaView } from 'react-navigation';
-import { RectButton, BorderlessButton } from 'react-native-gesture-handler';
+import { BorderlessButton } from 'react-native-gesture-handler';
 import equal from 'deep-equal';
 
+import Touch from '../utils/touch';
 import sharedStyles from './Styles';
 import scrollPersistTaps from '../utils/scrollPersistTaps';
 import random from '../utils/random';
 import I18n from '../i18n';
 import { LegalButton } from '../containers/HeaderButton';
 import StatusBar from '../containers/StatusBar';
-import { COLOR_SEPARATOR, COLOR_BORDER } from '../constants/colors';
+import { themes } from '../constants/colors';
+import { withTheme } from '../theme';
+import { themedHeader } from '../utils/navigation';
+import { isTablet } from '../utils/deviceInfo';
+import Button from '../containers/Button';
 
 const styles = StyleSheet.create({
 	container: {
 		paddingVertical: 30
 	},
 	safeArea: {
-		paddingBottom: 30
+		paddingBottom: 30,
+		flex: 1
 	},
 	serviceButton: {
 		borderRadius: 2,
@@ -31,7 +37,6 @@ const styles = StyleSheet.create({
 	serviceButtonContainer: {
 		borderRadius: 2,
 		borderWidth: 1,
-		borderColor: COLOR_BORDER,
 		width: '100%',
 		height: 48,
 		flexDirection: 'row',
@@ -48,11 +53,15 @@ const styles = StyleSheet.create({
 	},
 	serviceText: {
 		...sharedStyles.textRegular,
-		...sharedStyles.textColorNormal,
 		fontSize: 16
 	},
 	serviceName: {
 		...sharedStyles.textBold
+	},
+	registerDisabled: {
+		...sharedStyles.textRegular,
+		...sharedStyles.textAlignCenter,
+		fontSize: 16
 	},
 	servicesTogglerContainer: {
 		flexDirection: 'row',
@@ -70,8 +79,7 @@ const styles = StyleSheet.create({
 	},
 	separatorLine: {
 		flex: 1,
-		height: 1,
-		backgroundColor: COLOR_SEPARATOR
+		height: 1
 	},
 	separatorLineLeft: {
 		marginRight: 15
@@ -88,9 +96,10 @@ const SERVICE_HEIGHT = 58;
 const SERVICES_COLLAPSED_HEIGHT = 174;
 
 class LoginSignupView extends React.Component {
-	static navigationOptions = ({ navigation }) => {
+	static navigationOptions = ({ navigation, screenProps }) => {
 		const title = navigation.getParam('title', 'Rocket.Chat');
 		return {
+			...themedHeader(screenProps.theme),
 			title,
 			headerRight: <LegalButton testID='welcome-view-more' navigation={navigation} />
 		};
@@ -103,7 +112,11 @@ class LoginSignupView extends React.Component {
 		Site_Name: PropTypes.string,
 		Gitlab_URL: PropTypes.string,
 		CAS_enabled: PropTypes.bool,
-		CAS_login_url: PropTypes.string
+		CAS_login_url: PropTypes.string,
+		Accounts_ShowFormLogin: PropTypes.bool,
+		Accounts_RegistrationForm: PropTypes.string,
+		Accounts_RegistrationForm_LinkReplacementText: PropTypes.string,
+		theme: PropTypes.string
 	}
 
 	constructor(props) {
@@ -118,7 +131,9 @@ class LoginSignupView extends React.Component {
 
 	shouldComponentUpdate(nextProps, nextState) {
 		const { collapsed, servicesHeight } = this.state;
-		const { server, Site_Name, services } = this.props;
+		const {
+			server, Site_Name, services, Accounts_ShowFormLogin, Accounts_RegistrationForm, Accounts_RegistrationForm_LinkReplacementText, theme
+		} = this.props;
 		if (nextState.collapsed !== collapsed) {
 			return true;
 		}
@@ -129,6 +144,18 @@ class LoginSignupView extends React.Component {
 			return true;
 		}
 		if (nextProps.Site_Name !== Site_Name) {
+			return true;
+		}
+		if (nextProps.theme !== theme) {
+			return true;
+		}
+		if (nextProps.Accounts_ShowFormLogin !== Accounts_ShowFormLogin) {
+			return true;
+		}
+		if (nextProps.Accounts_RegistrationForm !== Accounts_RegistrationForm) {
+			return true;
+		}
+		if (nextProps.Accounts_RegistrationForm_LinkReplacementText !== Accounts_RegistrationForm_LinkReplacementText) {
 			return true;
 		}
 		if (!equal(nextProps.services, services)) {
@@ -222,6 +249,17 @@ class LoginSignupView extends React.Component {
 		this.openOAuth({ url });
 	}
 
+	onPressWordpress = () => {
+		const { services, server } = this.props;
+		const { clientId, serverURL } = services.wordpress;
+		const endpoint = `${ serverURL }/oauth/authorize`;
+		const redirect_uri = `${ server }/_oauth/wordpress?close`;
+		const scope = 'openid';
+		const state = this.getOAuthState();
+		const params = `?client_id=${ clientId }&redirect_uri=${ redirect_uri }&scope=${ scope }&state=${ state }&response_type=code`;
+		this.openOAuth({ url: `${ endpoint }${ params }` });
+	}
+
 	onPressCustomOAuth = (loginService) => {
 		const { server } = this.props;
 		const {
@@ -248,7 +286,7 @@ class LoginSignupView extends React.Component {
 	onPressCas = () => {
 		const { server, CAS_login_url } = this.props;
 		const ssoToken = random(17);
-		const url = `${ CAS_login_url }/?service=${ server }/_cas/${ ssoToken }`;
+		const url = `${ CAS_login_url }?service=${ server }/_cas/${ ssoToken }`;
 		this.openOAuth({ url, ssoToken, authType: 'cas' });
 	}
 
@@ -304,24 +342,27 @@ class LoginSignupView extends React.Component {
 			google: this.onPressGoogle,
 			linkedin: this.onPressLinkedin,
 			'meteor-developer': this.onPressMeteor,
-			twitter: this.onPressTwitter
+			twitter: this.onPressTwitter,
+			wordpress: this.onPressWordpress
 		};
 		return oauthProviders[name];
 	}
 
 	renderServicesSeparator = () => {
 		const { collapsed } = this.state;
-		const { services } = this.props;
+		const {
+			services, theme, Accounts_ShowFormLogin, Accounts_RegistrationForm
+		} = this.props;
 		const { length } = Object.values(services);
 
-		if (length > 3) {
+		if (length > 3 && Accounts_ShowFormLogin && Accounts_RegistrationForm) {
 			return (
 				<View style={styles.servicesTogglerContainer}>
-					<View style={[styles.separatorLine, styles.separatorLineLeft]} />
+					<View style={[styles.separatorLine, styles.separatorLineLeft, { backgroundColor: themes[theme].auxiliaryText }]} />
 					<BorderlessButton onPress={this.toggleServices}>
 						<Image source={{ uri: 'options' }} style={[styles.servicesToggler, !collapsed && styles.inverted]} />
 					</BorderlessButton>
-					<View style={[styles.separatorLine, styles.separatorLineRight]} />
+					<View style={[styles.separatorLine, styles.separatorLineRight, { backgroundColor: themes[theme].auxiliaryText }]} />
 				</View>
 			);
 		}
@@ -336,6 +377,7 @@ class LoginSignupView extends React.Component {
 		let { name } = service;
 		name = name === 'meteor-developer' ? 'meteor' : name;
 		const icon = `icon_${ name }`;
+		const isSaml = service.service === 'saml';
 		let onPress = () => {};
 
 		switch (service.authType) {
@@ -359,10 +401,10 @@ class LoginSignupView extends React.Component {
 				break;
 		}
 		name = name.charAt(0).toUpperCase() + name.slice(1);
-		const { CAS_enabled } = this.props;
+		const { CAS_enabled, theme } = this.props;
 		let buttonText;
-		if (service.service === 'saml' || (service.service === 'cas' && CAS_enabled)) {
-			buttonText = <Text style={styles.serviceName}>{name}</Text>;
+		if (isSaml || (service.service === 'cas' && CAS_enabled)) {
+			buttonText = <Text style={[styles.serviceName, isSaml && { color: service.buttonLabelColor }]}>{name}</Text>;
 		} else {
 			buttonText = (
 				<>
@@ -372,26 +414,30 @@ class LoginSignupView extends React.Component {
 		}
 		this.onPressCustomOAuth(service);
 		return (
-			<RectButton key={service.name} onPress={onPress} style={styles.serviceButton}>
-				<View style={styles.serviceButtonContainer}>
+			<Touch
+				key={service.name}
+				onPress={onPress}
+				style={[styles.serviceButton, isSaml && { backgroundColor: service.buttonColor }]}
+				theme={theme}
+			>
+				<View style={[styles.serviceButtonContainer, { borderColor: themes[theme].borderColor }]}>
 					{service.authType === 'oauth' ? <Image source={{ uri: icon }} style={styles.serviceIcon} /> : null}
-					<Text style={styles.serviceText}>{buttonText}</Text>
+					<Text style={[styles.serviceText, { color: themes[theme].titleText }]}>{buttonText}</Text>
 				</View>
-			</RectButton>
+			</Touch>
 		);
 	}
 
 	renderServices = () => {
 		const { servicesHeight } = this.state;
-		const { services } = this.props;
+		const { services, Accounts_ShowFormLogin, Accounts_RegistrationForm } = this.props;
 		const { length } = Object.values(services);
 		const style = {
 			overflow: 'hidden',
 			height: servicesHeight
 		};
 
-
-		if (length > 3) {
+		if (length > 3 && Accounts_ShowFormLogin && Accounts_RegistrationForm) {
 			return (
 				<Animated.View style={style}>
 					{Object.values(services).map(service => this.renderItem(service))}
@@ -405,7 +451,11 @@ class LoginSignupView extends React.Component {
 		);
 	}
 
-	render() {
+	renderLogin = () => {
+		const { Accounts_ShowFormLogin } = this.props;
+		if (!Accounts_ShowFormLogin) {
+			return null;
+		}
 		return (
 			<ScrollView style={[sharedStyles.containerScrollView, sharedStyles.container, styles.container]} {...scrollPersistTaps}>
 				<StatusBar />
@@ -413,6 +463,50 @@ class LoginSignupView extends React.Component {
 					{this.renderServices()}
 				</SafeAreaView>
 			</ScrollView>
+		);
+	}
+
+	renderRegister = () => {
+		const { Accounts_RegistrationForm, Accounts_RegistrationForm_LinkReplacementText, theme } = this.props;
+		if (Accounts_RegistrationForm !== 'Public') {
+			return <Text style={[styles.registerDisabled, { color: themes[theme].auxiliaryText }]}>{Accounts_RegistrationForm_LinkReplacementText}</Text>;
+		}
+		return (
+			<Button
+				title={I18n.t('Create_account')}
+				type='secondary'
+				onPress={() => this.register()}
+				theme={theme}
+				testID='welcome-view-register'
+			/>
+		);
+	}
+
+	render() {
+		const { theme } = this.props;
+		return (
+			<SafeAreaView
+				testID='welcome-view'
+				forceInset={{ vertical: 'never' }}
+				style={[styles.safeArea, { backgroundColor: themes[theme].backgroundColor }]}
+			>
+				<ScrollView
+					style={[
+						sharedStyles.containerScrollView,
+						sharedStyles.container,
+						styles.container,
+						{ backgroundColor: themes[theme].backgroundColor },
+						isTablet && sharedStyles.tabletScreenContent
+					]}
+					{...scrollPersistTaps}
+				>
+					<StatusBar theme={theme} />
+					{this.renderServices()}
+					{this.renderServicesSeparator()}
+					{this.renderLogin()}
+					{this.renderRegister()}
+				</ScrollView>
+			</SafeAreaView>
 		);
 	}
 }
@@ -423,7 +517,10 @@ const mapStateToProps = state => ({
 	Gitlab_URL: state.settings.API_Gitlab_URL,
 	CAS_enabled: state.settings.CAS_enabled,
 	CAS_login_url: state.settings.CAS_login_url,
+	Accounts_ShowFormLogin: state.settings.Accounts_ShowFormLogin,
+	Accounts_RegistrationForm: state.settings.Accounts_RegistrationForm,
+	Accounts_RegistrationForm_LinkReplacementText: state.settings.Accounts_RegistrationForm_LinkReplacementText,
 	services: state.login.services
 });
 
-export default connect(mapStateToProps)(LoginSignupView);
+export default connect(mapStateToProps)(withTheme(LoginSignupView));

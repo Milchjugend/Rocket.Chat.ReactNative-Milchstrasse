@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {
-	Keyboard, Text, ScrollView, Alert
-} from 'react-native';
+import { Keyboard, Text, ScrollView } from 'react-native';
 import { connect } from 'react-redux';
 import { SafeAreaView } from 'react-navigation';
 import RNPickerSelect from 'react-native-picker-select';
@@ -20,13 +18,19 @@ import isValidEmail from '../utils/isValidEmail';
 import { LegalButton } from '../containers/HeaderButton';
 import StatusBar from '../containers/StatusBar';
 import log from '../utils/log';
+import { withTheme } from '../theme';
+import { themes } from '../constants/colors';
+import { themedHeader } from '../utils/navigation';
+import { isTablet } from '../utils/deviceInfo';
+import { showErrorAlert } from '../utils/info';
 
 const shouldUpdateState = ['name', 'email', 'password', 'username', 'saving'];
 
 class RegisterView extends React.Component {
-	static navigationOptions = ({ navigation }) => {
+	static navigationOptions = ({ navigation, screenProps }) => {
 		const title = navigation.getParam('title', 'Rocket.Chat');
 		return {
+			...themedHeader(screenProps.theme),
 			title,
 			headerRight: <LegalButton testID='register-view-more' navigation={navigation} />
 		};
@@ -36,7 +40,9 @@ class RegisterView extends React.Component {
 		navigation: PropTypes.object,
 		loginRequest: PropTypes.func,
 		Site_Name: PropTypes.string,
-		Accounts_CustomFields: PropTypes.string
+		Accounts_CustomFields: PropTypes.string,
+		Accounts_EmailVerification: PropTypes.bool,
+		theme: PropTypes.string
 	}
 
 	constructor(props) {
@@ -67,6 +73,10 @@ class RegisterView extends React.Component {
 
 	shouldComponentUpdate(nextProps, nextState) {
 		const { customFields } = this.state;
+		const { theme } = this.props;
+		if (nextProps.theme !== theme) {
+			return true;
+		}
 		if (!equal(nextState.customFields, customFields)) {
 			return true;
 		}
@@ -109,22 +119,31 @@ class RegisterView extends React.Component {
 		const {
 			name, email, password, username, customFields
 		} = this.state;
-		const { loginRequest } = this.props;
+		const { loginRequest, Accounts_EmailVerification, navigation } = this.props;
 
 		try {
 			await RocketChat.register({
 				name, email, pass: password, username, ...customFields
 			});
-			await loginRequest({ user: email, password });
+
+			if (Accounts_EmailVerification) {
+				await navigation.goBack();
+				showErrorAlert(I18n.t('Verify_email_desc'), I18n.t('Verify_email_title'));
+			} else {
+				await loginRequest({ user: email, password });
+			}
 		} catch (e) {
-			Alert.alert(I18n.t('Oops'), e.data.error);
+			if (e.data && e.data.errorType === 'username-invalid') {
+				return loginRequest({ user: email, password });
+			}
+			showErrorAlert(e.data.error, I18n.t('Oops'));
 		}
 		this.setState({ saving: false });
 	}
 
 	renderCustomFields = () => {
 		const { customFields } = this.state;
-		const { Accounts_CustomFields } = this.props;
+		const { Accounts_CustomFields, theme } = this.props;
 		if (!Accounts_CustomFields) {
 			return null;
 		}
@@ -149,6 +168,7 @@ class RegisterView extends React.Component {
 								value={customFields[key]}
 								iconLeft='flag'
 								testID='register-view-custom-picker'
+								theme={theme}
 							/>
 						</RNPickerSelect>
 					);
@@ -172,6 +192,7 @@ class RegisterView extends React.Component {
 							}
 							this.avatarUrl.focus();
 						}}
+						theme={theme}
 					/>
 				);
 			});
@@ -182,12 +203,16 @@ class RegisterView extends React.Component {
 
 	render() {
 		const { saving } = this.state;
+		const { theme } = this.props;
 		return (
-			<KeyboardView contentContainerStyle={sharedStyles.container}>
-				<StatusBar />
+			<KeyboardView
+				style={{ backgroundColor: themes[theme].backgroundColor }}
+				contentContainerStyle={sharedStyles.container}
+			>
+				<StatusBar theme={theme} />
 				<ScrollView {...scrollPersistTaps} contentContainerStyle={sharedStyles.containerScrollView}>
-					<SafeAreaView style={sharedStyles.container} testID='register-view' forceInset={{ vertical: 'never' }}>
-						<Text style={[sharedStyles.loginTitle, sharedStyles.textBold]}>{I18n.t('Sign_Up')}</Text>
+					<SafeAreaView style={[sharedStyles.container, isTablet && sharedStyles.tabletScreenContent]} testID='register-view' forceInset={{ vertical: 'never' }}>
+						<Text style={[sharedStyles.loginTitle, sharedStyles.textBold, { color: themes[theme].titleText }]}>{I18n.t('Sign_Up')}</Text>
 						<TextInput
 							autoFocus
 							placeholder={I18n.t('Name')}
@@ -196,6 +221,7 @@ class RegisterView extends React.Component {
 							onChangeText={name => this.setState({ name })}
 							onSubmitEditing={() => { this.usernameInput.focus(); }}
 							testID='register-view-name'
+							theme={theme}
 						/>
 						<TextInput
 							inputRef={(e) => { this.usernameInput = e; }}
@@ -205,6 +231,7 @@ class RegisterView extends React.Component {
 							onChangeText={username => this.setState({ username })}
 							onSubmitEditing={() => { this.emailInput.focus(); }}
 							testID='register-view-username'
+							theme={theme}
 						/>
 						<TextInput
 							inputRef={(e) => { this.emailInput = e; }}
@@ -215,6 +242,7 @@ class RegisterView extends React.Component {
 							onChangeText={email => this.setState({ email })}
 							onSubmitEditing={() => { this.passwordInput.focus(); }}
 							testID='register-view-email'
+							theme={theme}
 						/>
 						<TextInput
 							inputRef={(e) => { this.passwordInput = e; }}
@@ -226,6 +254,7 @@ class RegisterView extends React.Component {
 							onSubmitEditing={this.submit}
 							testID='register-view-password'
 							containerStyle={sharedStyles.inputLastChild}
+							theme={theme}
 						/>
 
 						{this.renderCustomFields()}
@@ -237,6 +266,7 @@ class RegisterView extends React.Component {
 							testID='register-view-submit'
 							disabled={!this.valid()}
 							loading={saving}
+							theme={theme}
 						/>
 					</SafeAreaView>
 				</ScrollView>
@@ -246,11 +276,12 @@ class RegisterView extends React.Component {
 }
 
 const mapStateToProps = state => ({
-	Accounts_CustomFields: state.settings.Accounts_CustomFields
+	Accounts_CustomFields: state.settings.Accounts_CustomFields,
+	Accounts_EmailVerification: state.settings.Accounts_EmailVerification
 });
 
 const mapDispatchToProps = dispatch => ({
 	loginRequest: params => dispatch(loginRequestAction(params))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(RegisterView);
+export default connect(mapStateToProps, mapDispatchToProps)(withTheme(RegisterView));

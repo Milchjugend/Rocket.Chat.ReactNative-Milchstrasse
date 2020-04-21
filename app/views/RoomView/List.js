@@ -1,11 +1,9 @@
 import React from 'react';
-import {
-	ActivityIndicator, FlatList, InteractionManager
-} from 'react-native';
+import { FlatList, InteractionManager, RefreshControl } from 'react-native';
 import PropTypes from 'prop-types';
-import debounce from 'lodash/debounce';
 import orderBy from 'lodash/orderBy';
 import { Q } from '@nozbe/watermelondb';
+import moment from 'moment';
 import isEqual from 'lodash/isEqual';
 
 import styles from './styles';
@@ -16,8 +14,11 @@ import log from '../../utils/log';
 import EmptyRoom from './EmptyRoom';
 import { isIOS } from '../../utils/deviceInfo';
 import { animateNextTransition } from '../../utils/layoutAnimation';
+import ActivityIndicator from '../../containers/ActivityIndicator';
+import debounce from '../../utils/debounce';
+import { themes } from '../../constants/colors';
 
-export class List extends React.Component {
+class List extends React.Component {
 	static propTypes = {
 		onEndReached: PropTypes.func,
 		renderFooter: PropTypes.func,
@@ -25,7 +26,10 @@ export class List extends React.Component {
 		rid: PropTypes.string,
 		t: PropTypes.string,
 		tmid: PropTypes.string,
-		animated: PropTypes.bool
+		theme: PropTypes.string,
+		listRef: PropTypes.func,
+		hideSystemMessages: PropTypes.array,
+		navigation: PropTypes.object
 	};
 
 	constructor(props) {
@@ -37,9 +41,18 @@ export class List extends React.Component {
 		this.state = {
 			loading: true,
 			end: false,
-			messages: []
+			messages: [],
+			refreshing: false,
+			animated: false
 		};
 		this.init();
+		this.didFocusListener = props.navigation.addListener('didFocus', () => {
+			if (this.mounted) {
+				this.setState({ animated: true });
+			} else {
+				this.state.animated = true;
+			}
+		});
 		console.timeEnd(`${ this.constructor.name } init`);
 	}
 
@@ -53,6 +66,12 @@ export class List extends React.Component {
 		const { rid, tmid } = this.props;
 		const db = database.active;
 
+		// handle servers with version < 3.0.0
+		let { hideSystemMessages = [] } = this.props;
+		if (!Array.isArray(hideSystemMessages)) {
+			hideSystemMessages = [];
+		}
+
 		if (tmid) {
 			try {
 				this.thread = await db.collections
@@ -63,34 +82,38 @@ export class List extends React.Component {
 			}
 			this.messagesObservable = db.collections
 				.get('thread_messages')
-				.query(
-					Q.where('rid', tmid)
-				)
-				.observeWithColumns(['_updated_at']);
-		} else {
+				.query(Q.where('rid', tmid), Q.or(Q.where('t', Q.notIn(hideSystemMessages)), Q.where('t', Q.eq(null))))
+				.observe();
+		} else if (rid) {
 			this.messagesObservable = db.collections
 				.get('messages')
-				.query(
-					Q.where('rid', rid)
-				)
-				.observeWithColumns(['_updated_at']);
+				.query(Q.where('rid', rid), Q.or(Q.where('t', Q.notIn(hideSystemMessages)), Q.where('t', Q.eq(null))))
+				.observe();
 		}
 
-		this.messagesSubscription = this.messagesObservable
-			.subscribe((data) => {
-				this.interaction = InteractionManager.runAfterInteractions(() => {
-					if (tmid) {
-						data = [this.thread, ...data];
-					}
-					const messages = orderBy(data, ['ts'], ['desc']);
-					if (this.mounted) {
-						animateNextTransition();
-						this.setState({ messages });
-					} else {
-						this.state.messages = messages;
-					}
+		if (rid) {
+			this.unsubscribeMessages();
+			this.messagesSubscription = this.messagesObservable
+				.subscribe((data) => {
+					this.interaction = InteractionManager.runAfterInteractions(() => {
+						if (tmid) {
+							data = [this.thread, ...data];
+						}
+						const messages = orderBy(data, ['ts'], ['desc']);
+						if (this.mounted) {
+							this.setState({ messages }, () => this.update());
+						} else {
+							this.state.messages = messages;
+						}
+					});
 				});
-			});
+		}
+	}
+
+	// eslint-disable-next-line react/sort-comp
+	reload = () => {
+		this.unsubscribeMessages();
+		this.init();
 	}
 
 	// this.state.loading works for this.onEndReached and RoomView.init
@@ -104,28 +127,43 @@ export class List extends React.Component {
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
-		const { messages, loading, end } = this.state;
+		const { loading, end, refreshing } = this.state;
+		const { hideSystemMessages, theme } = this.props;
+		if (theme !== nextProps.theme) {
+			return true;
+		}
 		if (loading !== nextState.loading) {
 			return true;
 		}
 		if (end !== nextState.end) {
 			return true;
 		}
-		if (!isEqual(messages, nextState.messages)) {
+		if (refreshing !== nextState.refreshing) {
+			return true;
+		}
+		if (!isEqual(hideSystemMessages, nextProps.hideSystemMessages)) {
 			return true;
 		}
 		return false;
 	}
 
-	componentWillUnmount() {
-		if (this.messagesSubscription && this.messagesSubscription.unsubscribe) {
-			this.messagesSubscription.unsubscribe();
+	componentDidUpdate(prevProps) {
+		const { hideSystemMessages } = this.props;
+		if (!isEqual(hideSystemMessages, prevProps.hideSystemMessages)) {
+			this.reload();
 		}
+	}
+
+	componentWillUnmount() {
+		this.unsubscribeMessages();
 		if (this.interaction && this.interaction.cancel) {
 			this.interaction.cancel();
 		}
 		if (this.onEndReached && this.onEndReached.stop) {
 			this.onEndReached.stop();
+		}
+		if (this.didFocusListener && this.didFocusListener.remove) {
+			this.didFocusListener.remove();
 		}
 		console.countReset(`${ this.constructor.name }.render calls`);
 	}
@@ -156,10 +194,53 @@ export class List extends React.Component {
 		}
 	}, 300)
 
+	onRefresh = () => this.setState({ refreshing: true }, async() => {
+		const { messages } = this.state;
+		const { rid, tmid } = this.props;
+
+		if (messages.length) {
+			try {
+				if (tmid) {
+					await RocketChat.loadThreadMessages({ tmid, rid, offset: messages.length - 1 });
+				} else {
+					await RocketChat.loadMissedMessages({ rid, lastOpen: moment().subtract(7, 'days').toDate() });
+				}
+			} catch (e) {
+				log(e);
+			}
+		}
+
+		this.setState({ refreshing: false });
+	})
+
+	// eslint-disable-next-line react/sort-comp
+	update = () => {
+		const { animated } = this.state;
+		if (animated) {
+			animateNextTransition();
+		}
+		this.forceUpdate();
+	};
+
+	unsubscribeMessages = () => {
+		if (this.messagesSubscription && this.messagesSubscription.unsubscribe) {
+			this.messagesSubscription.unsubscribe();
+		}
+	}
+
+	getLastMessage = () => {
+		const { messages } = this.state;
+		if (messages.length > 0) {
+			return messages[0];
+		}
+		return null;
+	}
+
 	renderFooter = () => {
 		const { loading } = this.state;
-		if (loading) {
-			return <ActivityIndicator style={styles.loading} />;
+		const { rid, theme } = this.props;
+		if (loading && rid) {
+			return <ActivityIndicator theme={theme} />;
 		}
 		return null;
 	}
@@ -172,13 +253,15 @@ export class List extends React.Component {
 
 	render() {
 		console.count(`${ this.constructor.name }.render calls`);
-		const { messages } = this.state;
+		const { rid, listRef } = this.props;
+		const { messages, refreshing } = this.state;
+		const { theme } = this.props;
 		return (
 			<>
-				<EmptyRoom length={messages.length} mounted={this.mounted} />
+				<EmptyRoom rid={rid} length={messages.length} mounted={this.mounted} theme={theme} />
 				<FlatList
 					testID='room-view-messages'
-					ref={ref => this.list = ref}
+					ref={listRef}
 					keyExtractor={item => item.id}
 					data={messages}
 					extraData={this.state}
@@ -187,15 +270,24 @@ export class List extends React.Component {
 					style={styles.list}
 					inverted
 					removeClippedSubviews={isIOS}
-					// initialNumToRender={7}
+					initialNumToRender={7}
 					onEndReached={this.onEndReached}
-					// onEndReachedThreshold={5}
-					// maxToRenderPerBatch={5}
-					// windowSize={10}
+					onEndReachedThreshold={5}
+					maxToRenderPerBatch={5}
+					windowSize={10}
 					ListFooterComponent={this.renderFooter}
+					refreshControl={(
+						<RefreshControl
+							refreshing={refreshing}
+							onRefresh={this.onRefresh}
+							tintColor={themes[theme].auxiliaryText}
+						/>
+					)}
 					{...scrollPersistTaps}
 				/>
 			</>
 		);
 	}
 }
+
+export default List;

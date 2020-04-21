@@ -2,12 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Text } from 'react-native';
 
+import { themes } from '../../constants/colors';
+
 import styles from './styles';
 
 const AtMention = React.memo(({
-	mention, mentions, username, navToRoomInfo, preview, style = []
+	mention, mentions, username, navToRoomInfo, style = [], useRealName, theme
 }) => {
-	let mentionStyle = styles.mention;
+	let mentionStyle = { ...styles.mention, color: themes[theme].buttonText };
 	if (mention === 'all' || mention === 'here') {
 		mentionStyle = {
 			...mentionStyle,
@@ -16,26 +18,38 @@ const AtMention = React.memo(({
 	} else if (mention === username) {
 		mentionStyle = {
 			...mentionStyle,
-			...styles.mentionLoggedUser
+			backgroundColor: themes[theme].actionTintColor
+		};
+	} else {
+		mentionStyle = {
+			...mentionStyle,
+			color: themes[theme].actionTintColor
 		};
 	}
 
+	const user = mentions && mentions.length && mentions.find(m => m.username === mention);
+
 	const handlePress = () => {
-		if (mentions && mentions.length && mentions.findIndex(m => m.username === mention) !== -1) {
-			const index = mentions.findIndex(m => m.username === mention);
-			const navParam = {
-				t: 'd',
-				rid: mentions[index]._id
-			};
-			navToRoomInfo(navParam);
-		}
+		const navParam = {
+			t: 'd',
+			rid: user && user._id
+		};
+		navToRoomInfo(navParam);
 	};
 
+	if (user) {
+		return (
+			<Text
+				style={[mentionStyle, ...style]}
+				onPress={handlePress}
+			>
+				{useRealName && user.name ? user.name : user.username}
+			</Text>
+		);
+	}
+
 	return (
-		<Text
-			style={[preview ? styles.text : mentionStyle, ...style]}
-			onPress={preview ? undefined : handlePress}
-		>
+		<Text style={[styles.text, { color: themes[theme].bodyText }, ...style]}>
 			{`@${ mention }`}
 		</Text>
 	);
@@ -46,7 +60,8 @@ AtMention.propTypes = {
 	username: PropTypes.string,
 	navToRoomInfo: PropTypes.func,
 	style: PropTypes.array,
-	preview: PropTypes.bool,
+	useRealName: PropTypes.bool,
+	theme: PropTypes.string,
 	mentions: PropTypes.oneOfType([PropTypes.array, PropTypes.object])
 };
 
