@@ -133,6 +133,21 @@ class Sidebar extends Component {
 		}
 	}
 
+	onPressCommunityProfile = () => {
+		const { navigation } = this.props;
+		navigation.navigate('CommunityProfileView', { title: I18n.t('Community_Profile') });
+	}
+
+	onPressCommunity = () => {
+		const { navigation } = this.props;
+		navigation.navigate('CommunityView', { title: I18n.t('Community') });
+	}
+
+	onPressAgenda = () => {
+		const { navigation } = this.props;
+		navigation.navigate('AgendaView', { title: I18n.t('Agenda') });
+	}
+
 	sidebarNavigate = (route) => {
 		const { navigation } = this.props;
 		navigation.navigate(route);
@@ -151,7 +166,28 @@ class Sidebar extends Component {
 					current={activeItemKey === 'ChatsStack'}
 				/>
 				<SidebarItem
-					text={I18n.t('Profile')}
+					text={I18n.t('Community_Profile')}
+					left={<CustomIcon name='discover' size={20} color={themes[theme].titleText} />}
+					onPress={this.onPressCommunityProfile}
+					testID='sidebar-community-profile'
+					current={activeItemKey === 'CommunityProfileStack'}
+				/>
+				<SidebarItem
+					text={I18n.t('Community')}
+					left={<CustomIcon name='team' size={20} color={themes[theme].titleText} />}
+					onPress={this.onPressCommunity}
+					testID='sidebar-community'
+					current={activeItemKey === 'CommunityStack'}
+				/>
+				<SidebarItem
+					text={I18n.t('Agenda')}
+					left={<CustomIcon name='calendar' size={20} color={themes[theme].titleText} />}
+					onPress={this.onPressAgenda}
+					testID='sidebar-agenda'
+					current={activeItemKey === 'AgendaStack'}
+				/>
+				<SidebarItem
+					text={I18n.t('Chat_Profile_Image')}
 					left={<CustomIcon name='user' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('ProfileView')}
 					testID='sidebar-profile'

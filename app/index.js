@@ -30,7 +30,7 @@ import NotificationBadge from './notifications/inApp';
 import {
 	defaultHeader, onNavigationStateChange, cardStyle, getActiveRouteName
 } from './utils/navigation';
-import { loggerConfig, analytics } from './utils/log';
+import { analytics } from './utils/log';
 import Toast from './containers/Toast';
 import { ThemeContext } from './theme';
 import RocketChat, { THEME_PREFERENCES_KEY } from './lib/rocketchat';
@@ -169,6 +169,9 @@ const ChatsStack = createStackNavigator({
 	PickerView: {
 		getScreen: () => require('./views/PickerView').default
 	},
+	WebsiteView: {
+		getScreen: () => require('./views/WebsiteView').default
+	},
 	...RoomRoutes
 }, {
 	defaultNavigationOptions: defaultHeader,
@@ -212,6 +215,30 @@ ProfileStack.navigationOptions = ({ navigation }) => {
 	};
 };
 
+const AgendaStack = createStackNavigator({
+	AgendaView: {
+		getScreen: () => require('./views/AgendaView').default
+	}
+}, {
+	defaultNavigationOptions: defaultHeader
+});
+
+const CommunityStack = createStackNavigator({
+	CommunityView: {
+		getScreen: () => require('./views/CommunityView').default
+	}
+}, {
+	defaultNavigationOptions: defaultHeader
+});
+
+const CommunityProfileStack = createStackNavigator({
+	CommunityProfileView: {
+		getScreen: () => require('./views/CommunityProfileView').default
+	}
+}, {
+	defaultNavigationOptions: defaultHeader
+});
+
 const SettingsStack = createStackNavigator({
 	SettingsView: {
 		getScreen: () => require('./views/SettingsView').default
@@ -253,7 +280,10 @@ const ChatsDrawer = createDrawerNavigator({
 	ChatsStack,
 	ProfileStack,
 	SettingsStack,
-	AdminPanelStack
+	AdminPanelStack,
+	AgendaStack,
+	CommunityStack,
+	CommunityProfileStack
 }, {
 	contentComponent: Sidebar,
 	overlayColor: '#00000090'
@@ -671,8 +701,6 @@ export default class Root extends React.Component {
 		RocketChat.getAllowCrashReport()
 			.then((allowCrashReport) => {
 				if (!allowCrashReport) {
-					loggerConfig.autoNotify = false;
-					loggerConfig.registerBeforeSendCallback(() => false);
 					analytics().setAnalyticsCollectionEnabled(false);
 				}
 			});

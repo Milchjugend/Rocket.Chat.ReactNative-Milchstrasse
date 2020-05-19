@@ -25,7 +25,7 @@ import scrollPersistTaps from '../../utils/scrollPersistTaps';
 import { showErrorAlert, showConfirmationAlert } from '../../utils/info';
 import styles from './styles';
 import sharedStyles from '../Styles';
-import { loggerConfig, analytics } from '../../utils/log';
+import { analytics } from '../../utils/log';
 import { PLAY_MARKET_LINK, APP_STORE_LINK, LICENSE_LINK } from '../../constants/links';
 import { withTheme } from '../../theme';
 import { themedHeader } from '../../utils/navigation';
@@ -120,14 +120,8 @@ class SettingsView extends React.Component {
 		AsyncStorage.setItem(CRASH_REPORT_KEY, JSON.stringify(value));
 		const { toggleCrashReport } = this.props;
 		toggleCrashReport(value);
-		loggerConfig.autoNotify = value;
 		analytics().setAnalyticsCollectionEnabled(value);
 
-		if (value) {
-			loggerConfig.clearBeforeSendCallbacks();
-		} else {
-			loggerConfig.registerBeforeSendCallback(() => false);
-		}
 	}
 
 	navigateToScreen = (screen) => {
@@ -136,8 +130,8 @@ class SettingsView extends React.Component {
 	}
 
 	sendEmail = async() => {
-		const subject = encodeURI('React Native App Support');
-		const email = encodeURI('support@rocket.chat');
+		const subject = encodeURI('Milchstrasse App Support');
+		const email = encodeURI('app@milchjugend.ch');
 		const description = encodeURI(`
 			version: ${ getReadableVersion }
 			device: ${ getDeviceModel }
@@ -145,7 +139,7 @@ class SettingsView extends React.Component {
 		try {
 			await Linking.openURL(`mailto:${ email }?subject=${ subject }&body=${ description }`);
 		} catch (e) {
-			showErrorAlert(I18n.t('error-email-send-failed', { message: 'support@rocket.chat' }));
+			showErrorAlert(I18n.t('error-email-send-failed', { message: 'app@milchjugend.ch' }));
 		}
 	}
 
