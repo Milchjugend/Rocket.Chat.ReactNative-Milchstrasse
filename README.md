@@ -18,7 +18,7 @@ Who run the world? Queers!
 
 ## Download
 
-### Official apps
+### Milchstrasse Apps für Android und iOS
 <a href="https://play.google.com/store/apps/details?id=ch.milchjugend.milchstrasse">
   <img alt="Download on Google Play" src="https://play.google.com/intl/en_us/badges/images/badge_new.png" height=43>
 </a>
