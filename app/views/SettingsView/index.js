@@ -121,7 +121,6 @@ class SettingsView extends React.Component {
 		const { toggleCrashReport } = this.props;
 		toggleCrashReport(value);
 		analytics().setAnalyticsCollectionEnabled(value);
-
 	}
 
 	navigateToScreen = (screen) => {
