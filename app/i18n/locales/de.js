@@ -521,5 +521,12 @@ export default {
 	You_will_be_logged_out_of_this_application: 'Du wirst in dieser Anwendung vom Server abgemeldet.',
 	Clear: 'Löschen',
 	This_will_clear_all_your_offline_data: 'Dies wird deine Offline-Daten löschen.',
-	Mark_unread: 'Als ungelesen markieren'
+	Mark_unread: 'Als ungelesen markieren',
+	Community_Profile: 'Mein Planet',
+	Chat_Profile_Image: 'Chat-Profilbild',
+	Connect_to_milchstrasse: 'Mit Milchstrasse verbinden',
+	Landing_title: 'Milchstrasse🌈Chat',
+	Landing_subtitle: 'Ein Universum voll mit Queers',
+	Agenda: 'Agenda',
+	Community: 'Community'
 };

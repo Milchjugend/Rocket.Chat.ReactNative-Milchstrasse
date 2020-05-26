@@ -124,10 +124,21 @@ class RoomActionsView extends React.Component {
 		}
 	}
 
+
 	onPressTouchable = (item) => {
+		const { room } = this.state;
+		const { name, t, topic } = room;
 		if (item.route) {
 			const { navigation } = this.props;
-			navigation.navigate(item.route, item.params);
+			if (item.route === 'RoomInfoView') {
+				if (t === 'd') {
+					navigation.navigate('WebsiteView', { t, title: name, url: `https://app.milchjugend.ch/members/${ name }/` });
+				} else if (topic && topic.includes('Event Kanal')) {
+					navigation.navigate('WebsiteView', { t, title: name, url: `https://app.milchjugend.ch/event/${ name }/` });
+				}
+			} else {
+				navigation.navigate(item.route, item.params);
+			}
 		}
 		if (item.event) {
 			return item.event();
