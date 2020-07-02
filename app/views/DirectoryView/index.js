@@ -135,6 +135,15 @@ class DirectoryView extends React.Component {
 		});
 	}
 
+	goMembers = ({
+		rid, name, t, search
+	}) => {
+		const { navigation } = this.props;
+		navigation.navigate('RoomMembersView', {
+			rid, name, t, search
+		});
+	}
+
 	onPressItem = async(item) => {
 		const { type } = this.state;
 		if (type === 'users') {
@@ -147,6 +156,12 @@ class DirectoryView extends React.Component {
 				rid: item._id, name: item.name, t: 'c', search: true
 			});
 		}
+	}
+
+	onPressMembers = (item) => {
+		this.goMembers({
+			rid: item._id, name: item.name, t: 'c', search: true
+		});
 	}
 
 	renderHeader = () => {
@@ -217,7 +232,9 @@ class DirectoryView extends React.Component {
 			<DirectoryItem
 				avatar={item.name}
 				description={item.topic}
-				rightLabel={I18n.t('N_users', { n: item.usersCount })}
+				userCount={item.usersCount}
+				item={item}
+				onPressMembers={() => this.onPressMembers(item)}
 				type='c'
 				{...commonProps}
 			/>

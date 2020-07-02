@@ -7,6 +7,7 @@ import Avatar from '../../containers/Avatar';
 import RoomTypeIcon from '../../containers/RoomTypeIcon';
 import styles, { ROW_HEIGHT } from './styles';
 import { themes } from '../../constants/colors';
+import { CustomIcon } from '../../lib/Icons';
 
 export { ROW_HEIGHT };
 
@@ -18,7 +19,7 @@ const DirectoryItemLabel = React.memo(({ text, theme }) => {
 });
 
 const DirectoryItem = ({
-	title, description, avatar, onPress, testID, style, baseUrl, user, rightLabel, type, theme
+	title, description, avatar, onPress, testID, style, baseUrl, user, rightLabel, type, theme, userCount, item, onPressMembers
 }) => (
 	<Touch
 		onPress={onPress}
@@ -43,7 +44,17 @@ const DirectoryItem = ({
 				</View>
 				{ description ? <Text style={[styles.directoryItemUsername, { color: themes[theme].auxiliaryText }]} numberOfLines={1}>{description}</Text> : null }
 			</View>
-			<DirectoryItemLabel text={rightLabel} theme={theme} />
+			{ type === 'c' ? (
+				<Touch
+					onPress={() => onPressMembers(item)}
+					style={[styles.directoryItemMembersButton, { backgroundColor: themes[theme].backgroundColor }]}
+					testID={testID}
+					theme={theme}
+				>
+					<Text style={[styles.directoryItemLabelMembers, { color: themes[theme].tintColor }]}>{userCount}</Text>
+					<CustomIcon style={[styles.toggleDropdownIcon, { color: themes[theme].tintColor }]} size={20} name='team' />
+				</Touch>
+			) : (<DirectoryItemLabel text={rightLabel} theme={theme} />)}
 		</View>
 	</Touch>
 );
@@ -62,7 +73,10 @@ DirectoryItem.propTypes = {
 	testID: PropTypes.string.isRequired,
 	style: PropTypes.any,
 	rightLabel: PropTypes.string,
-	theme: PropTypes.string
+	theme: PropTypes.string,
+	userCount: PropTypes.number,
+	item: PropTypes.any,
+	onPressMembers: PropTypes.func
 };
 
 DirectoryItemLabel.propTypes = {

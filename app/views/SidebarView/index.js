@@ -166,6 +166,13 @@ class Sidebar extends Component {
 					current={activeItemKey === 'ChatsStack'}
 				/>
 				<SidebarItem
+					text={I18n.t('Channel_Directory')}
+					left={<CustomIcon name='hashtag' size={20} color={themes[theme].titleText} />}
+					onPress={() => this.sidebarNavigate('DirectoryView')}
+					testID='sidebar-channels'
+					current={activeItemKey === 'ChannelDirectoryStack'}
+				/>
+				<SidebarItem
 					text={I18n.t('Community_Profile')}
 					left={<CustomIcon name='discover' size={20} color={themes[theme].titleText} />}
 					onPress={this.onPressCommunityProfile}

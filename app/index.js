@@ -239,6 +239,14 @@ const CommunityProfileStack = createStackNavigator({
 	defaultNavigationOptions: defaultHeader
 });
 
+const ChannelDirectoryStack = createStackNavigator({
+	DirectoryView: {
+		getScreen: () => require('./views/DirectoryView').default
+	}
+}, {
+	defaultNavigationOptions: defaultHeader
+});
+
 const SettingsStack = createStackNavigator({
 	SettingsView: {
 		getScreen: () => require('./views/SettingsView').default
@@ -283,7 +291,8 @@ const ChatsDrawer = createDrawerNavigator({
 	AdminPanelStack,
 	AgendaStack,
 	CommunityStack,
-	CommunityProfileStack
+	CommunityProfileStack,
+	ChannelDirectoryStack
 }, {
 	contentComponent: Sidebar,
 	overlayColor: '#00000090'

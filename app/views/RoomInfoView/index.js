@@ -1,17 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { View, Text, ScrollView } from 'react-native';
+import {
+	View, Text, ScrollView, ActivityIndicator, Linking
+} from 'react-native';
 import { BorderlessButton } from 'react-native-gesture-handler';
 import { connect } from 'react-redux';
-import moment from 'moment';
 import _ from 'lodash';
 import { SafeAreaView } from 'react-navigation';
+import WebView from 'react-native-webview';
 import { CustomIcon } from '../../lib/Icons';
 import Status from '../../containers/Status';
 import Avatar from '../../containers/Avatar';
 import styles from './styles';
 import sharedStyles from '../Styles';
-import database from '../../lib/database';
 import RocketChat from '../../lib/rocketchat';
 import RoomTypeIcon from '../../containers/RoomTypeIcon';
 import I18n from '../../i18n';
@@ -41,6 +42,12 @@ const getRoomTitle = (room, type, name, username, statusText, theme) => (type ==
 	)
 );
 
+const script = `
+    window.ReactNativeWebView.postMessage(
+      Math.max(document.documentElement.clientHeight, document.documentElement.scrollHeight, document.body.clientHeight, document.body.scrollHeight)
+    );
+`;
+
 class RoomInfoView extends React.Component {
 	static navigationOptions = ({ navigation, screenProps }) => {
 		const showEdit = navigation.getParam('showEdit');
@@ -66,7 +73,6 @@ class RoomInfoView extends React.Component {
 			token: PropTypes.string
 		}),
 		baseUrl: PropTypes.string,
-		Message_TimeFormat: PropTypes.string,
 		theme: PropTypes.string
 	}
 
@@ -79,8 +85,10 @@ class RoomInfoView extends React.Component {
 		this.state = {
 			room: room || { rid: this.rid, t: this.t },
 			roomUser: roomUser || {},
-			parsedRoles: []
+			webViewHeight: 0,
+			webViewLoading: true
 		};
+		this.webview = React.createRef();
 	}
 
 	async componentDidMount() {
@@ -94,15 +102,7 @@ class RoomInfoView extends React.Component {
 				const roomUserId = RocketChat.getUidDirectMessage(roomState);
 				const result = await RocketChat.getUserInfo(roomUserId);
 				if (result.success) {
-					const { roles } = result.user;
-					let parsedRoles = [];
-					if (roles && roles.length) {
-						parsedRoles = await Promise.all(roles.map(async(role) => {
-							const description = await this.getRoleDescription(role);
-							return description;
-						}));
-					}
-					this.setState({ roomUser: result.user, parsedRoles });
+					this.setState({ roomUser: result.user });
 				}
 			} catch (e) {
 				log(e);
@@ -142,20 +142,6 @@ class RoomInfoView extends React.Component {
 		}
 	}
 
-	getRoleDescription = async(id) => {
-		const db = database.active;
-		try {
-			const rolesCollection = db.collections.get('roles');
-			const role = await rolesCollection.find(id);
-			if (role) {
-				return role.description;
-			}
-			return null;
-		} catch (e) {
-			return null;
-		}
-	}
-
 	goRoom = async() => {
 		const { roomUser } = this.state;
 		const { username } = roomUser;
@@ -190,52 +176,6 @@ class RoomInfoView extends React.Component {
 		);
 	}
 
-	renderRole = (description) => {
-		const { theme } = this.props;
-		if (description) {
-			return (
-				<View style={[styles.roleBadge, { backgroundColor: themes[theme].auxiliaryBackground }]} key={description}>
-					<Text style={styles.role}>{ description }</Text>
-				</View>
-			);
-		}
-		return null;
-	}
-
-	renderRoles = () => {
-		const { parsedRoles } = this.state;
-		const { theme } = this.props;
-		if (parsedRoles && parsedRoles.length) {
-			return (
-				<View style={styles.item}>
-					<Text style={[styles.itemLabel, { color: themes[theme].titleText }]}>{I18n.t('Roles')}</Text>
-					<View style={styles.rolesContainer}>
-						{parsedRoles.map(role => this.renderRole(role))}
-					</View>
-				</View>
-			);
-		}
-		return null;
-	}
-
-	renderTimezone = () => {
-		const { roomUser } = this.state;
-		const { Message_TimeFormat } = this.props;
-
-		if (roomUser) {
-			const { utcOffset } = roomUser;
-
-			if (!utcOffset) {
-				return null;
-			}
-			return this.renderItem({
-				label: I18n.t('Timezone'),
-				content: `${ moment().utcOffset(utcOffset).format(Message_TimeFormat) } (UTC ${ utcOffset })`
-			});
-		}
-		return null;
-	}
-
 	renderAvatar = (room, roomUser) => {
 		const { baseUrl, user, theme } = this.props;
 
@@ -258,32 +198,6 @@ class RoomInfoView extends React.Component {
 		label: I18n.t('Broadcast_Channel'),
 		content: I18n.t('Broadcast_channel_Description')
 	});
-
-	renderCustomFields = () => {
-		const { roomUser } = this.state;
-		if (roomUser) {
-			const { customFields } = roomUser;
-
-			if (!roomUser.customFields) {
-				return null;
-			}
-
-			return (
-				Object.keys(customFields).map((title) => {
-					if (!customFields[title]) {
-						return;
-					}
-					return (
-						<View style={styles.item} key={title}>
-							<Text style={styles.itemLabel}>{title}</Text>
-							<Text style={styles.itemContent}>{customFields[title]}</Text>
-						</View>
-					);
-				})
-			);
-		}
-		return null;
-	}
 
 	renderButton = (onPress, iconName, text) => {
 		const { theme } = this.props;
@@ -322,29 +236,41 @@ class RoomInfoView extends React.Component {
 		);
 	}
 
-	renderDirect = () => {
-		const { roomUser } = this.state;
-		return (
-			<>
-				{this.renderRoles()}
-				{this.renderTimezone()}
-				{this.renderCustomFields(roomUser._id)}
-			</>
-		);
+	onMessage = (e) => {
+		this.setState({
+			webViewHeight: Number(e.nativeEvent.data)
+		});
 	}
 
+	hideSpinner=() => {
+		this.setState({ webViewLoading: false });
+	};
+
+	showSpinner=() => {
+		this.setState({ webViewLoading: true });
+	};
+
+	handleNavigationStateChange=(event, username) => {
+		if (event.url && !event.url.includes(username)) {
+			this.webview.current.stopLoading();
+			Linking.openURL(event.url);
+		}
+	};
+
 	render() {
-		const { room, roomUser } = this.state;
+		const {
+			room, roomUser, webViewHeight, webViewLoading
+		} = this.state;
 		const { theme } = this.props;
 		const isDirect = this.isDirect();
 		if (!room) {
 			return <View />;
 		}
 		return (
-			<ScrollView style={[styles.scroll, { backgroundColor: themes[theme].backgroundColor }]}>
+			<ScrollView style={[styles.scroll, { backgroundColor: themes[theme].auxiliaryBackground }]}>
 				<StatusBar theme={theme} />
 				<SafeAreaView
-					style={[styles.container, { backgroundColor: themes[theme].backgroundColor }]}
+					style={[styles.container, { backgroundColor: themes[theme].auxiliaryBackground }]}
 					forceInset={{ vertical: 'never' }}
 					testID='room-info-view'
 				>
@@ -353,7 +279,33 @@ class RoomInfoView extends React.Component {
 						<View style={styles.roomTitleContainer}>{ getRoomTitle(room, this.t, roomUser && roomUser.name, roomUser && roomUser.username, roomUser && roomUser.statusText, theme) }</View>
 						{isDirect ? this.renderButtons() : null}
 					</View>
-					{isDirect ? this.renderDirect() : this.renderChannel()}
+					<WebView
+						source={{ uri: `https://app.milchjugend.ch/members/${ roomUser.username }/` }}
+						style={{ height: webViewHeight }}
+						javaScriptEnabled
+						scrollEnabled={false}
+						onMessage={this.onMessage}
+						injectedJavaScript={script}
+						onLoadStart={() => (this.showSpinner())}
+						onLoad={() => this.hideSpinner()}
+						ref={this.webview}
+					/>
+					{webViewLoading && (
+						<ActivityIndicator
+							style={{
+								flex: 1,
+								left: 0,
+								right: 0,
+								top: 0,
+								bottom: 0,
+								position: 'relative',
+								alignItems: 'center',
+								justifyContent: 'center'
+							}}
+							size='large'
+						/>
+					)}
+					{!isDirect && this.renderChannel()}
 				</SafeAreaView>
 			</ScrollView>
 		);

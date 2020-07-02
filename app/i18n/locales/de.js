@@ -528,5 +528,6 @@ export default {
 	Landing_title: 'Milchstrasse🌈Chat',
 	Landing_subtitle: 'Ein Universum voll mit Queers',
 	Agenda: 'Agenda',
-	Community: 'Community'
+	Community: 'Community',
+	Channel_Directory: 'Kanal-Verzeichnis'
 };
