@@ -5,8 +5,11 @@ import {
 } from 'react-native';
 import { BorderlessButton } from 'react-native-gesture-handler';
 import { connect } from 'react-redux';
-import _ from 'lodash';
 import { SafeAreaView } from 'react-navigation';
+import UAParser from 'ua-parser-js';
+import _ from 'lodash';
+
+import database from '../../lib/database';
 import WebView from 'react-native-webview';
 import { CustomIcon } from '../../lib/Icons';
 import Status from '../../containers/Status';
@@ -16,14 +19,21 @@ import sharedStyles from '../Styles';
 import RocketChat from '../../lib/rocketchat';
 import RoomTypeIcon from '../../containers/RoomTypeIcon';
 import I18n from '../../i18n';
-import { CustomHeaderButtons, Item } from '../../containers/HeaderButton';
+import { CustomHeaderButtons } from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
 import log from '../../utils/log';
 import { themes } from '../../constants/colors';
 import { withTheme } from '../../theme';
+import { withSplit } from '../../split';
 import { themedHeader } from '../../utils/navigation';
 import { getUserSelector } from '../../selectors/login';
 import Markdown from '../../containers/markdown';
+import Navigation from '../../lib/Navigation';
+
+import Livechat from './Livechat';
+import Channel from './Channel';
+import Item from './Item';
+import Direct from './Direct';
 
 const PERMISSION_EDIT_ROOM = 'edit-room';
 const getRoomTitle = (room, type, name, username, statusText, theme) => (type === 'd'
@@ -36,8 +46,8 @@ const getRoomTitle = (room, type, name, username, statusText, theme) => (type ==
 	)
 	: (
 		<View style={styles.roomTitleRow}>
-			<RoomTypeIcon type={room.prid ? 'discussion' : room.t} key='room-info-type' theme={theme} />
-			<Text testID='room-info-view-name' style={[styles.roomTitle, { color: themes[theme].titleText }]} key='room-info-name'>{room.prid ? room.fname : room.name}</Text>
+			<RoomTypeIcon type={room.prid ? 'discussion' : room.t} key='room-info-type' status={room.visitor?.status} theme={theme} />
+			<Text testID='room-info-view-name' style={[styles.roomTitle, { color: themes[theme].titleText }]} key='room-info-name'>{RocketChat.getRoomTitle(room)}</Text>
 		</View>
 	)
 );
@@ -50,16 +60,22 @@ const script = `
 
 class RoomInfoView extends React.Component {
 	static navigationOptions = ({ navigation, screenProps }) => {
-		const showEdit = navigation.getParam('showEdit');
-		const rid = navigation.getParam('rid');
 		const t = navigation.getParam('t');
+		const rid = navigation.getParam('rid');
+		const room = navigation.getParam('room');
+		const roomUser = navigation.getParam('roomUser');
+		const showEdit = navigation.getParam('showEdit', t === 'l');
 		return {
 			title: t === 'd' ? I18n.t('User_Info') : I18n.t('Room_Info'),
 			...themedHeader(screenProps.theme),
 			headerRight: showEdit
 				? (
 					<CustomHeaderButtons>
-						<Item iconName='edit' onPress={() => navigation.navigate('RoomInfoEditView', { rid })} testID='room-info-view-edit-button' />
+						<Item
+							iconName='edit'
+							onPress={() => navigation.navigate(t === 'l' ? 'LivechatEditView' : 'RoomInfoEditView', { rid, room, roomUser })}
+							testID='room-info-view-edit-button'
+						/>
 					</CustomHeaderButtons>
 				)
 				: null
@@ -73,6 +89,8 @@ class RoomInfoView extends React.Component {
 			token: PropTypes.string
 		}),
 		baseUrl: PropTypes.string,
+		rooms: PropTypes.array,
+		split: PropTypes.bool,
 		theme: PropTypes.string
 	}
 
@@ -91,25 +109,104 @@ class RoomInfoView extends React.Component {
 		this.webview = React.createRef();
 	}
 
-	async componentDidMount() {
-		const { roomUser, room: roomState } = this.state;
-		if (this.t === 'd' && !_.isEmpty(roomUser)) {
-			return;
+	componentDidMount() {
+		if (this.isDirect) {
+			this.loadUser();
+		} else {
+			this.loadRoom();
 		}
 
-		if (this.t === 'd') {
+		const { navigation } = this.props;
+		this.willFocusListener = navigation.addListener('willFocus', () => {
+			if (this.isLivechat) {
+				this.loadVisitor();
+			}
+		});
+	}
+
+	componentWillUnmount() {
+		if (this.subscription && this.subscription.unsubscribe) {
+			this.subscription.unsubscribe();
+		}
+		if (this.willFocusListener && this.willFocusListener.remove) {
+			this.willFocusListener.remove();
+		}
+	}
+
+	get isDirect() {
+		const { room } = this.state;
+		return room.t === 'd';
+	}
+
+	get isLivechat() {
+		const { room } = this.state;
+		return room.t === 'l';
+	}
+
+	getRoleDescription = async(id) => {
+		const db = database.active;
+		try {
+			const rolesCollection = db.collections.get('roles');
+			const role = await rolesCollection.find(id);
+			if (role) {
+				return role.description;
+			}
+			return null;
+		} catch (e) {
+			return null;
+		}
+	};
+
+	loadVisitor = async() => {
+		const { room } = this.state;
+		const { navigation } = this.props;
+
+		try {
+			const result = await RocketChat.getVisitorInfo(room?.visitor?._id);
+			if (result.success) {
+				const { visitor } = result;
+				if (visitor.userAgent) {
+					const ua = new UAParser();
+					ua.setUA(visitor.userAgent);
+					visitor.os = `${ ua.getOS().name } ${ ua.getOS().version }`;
+					visitor.browser = `${ ua.getBrowser().name } ${ ua.getBrowser().version }`;
+				}
+				this.setState({ roomUser: visitor });
+				navigation.setParams({ roomUser: visitor });
+			}
+		} catch (error) {
+			// Do nothing
+		}
+	}
+
+	loadUser = async() => {
+		const { room: roomState, roomUser } = this.state;
+
+		if (_.isEmpty(roomUser)) {
 			try {
 				const roomUserId = RocketChat.getUidDirectMessage(roomState);
 				const result = await RocketChat.getUserInfo(roomUserId);
 				if (result.success) {
-					this.setState({ roomUser: result.user });
-				}
-			} catch (e) {
-				log(e);
-			}
-			return;
-		}
+					const { user } = result;
+					const { roles } = user;
+					if (roles && roles.length) {
+						user.parsedRoles = await Promise.all(roles.map(async(role) => {
+							const description = await this.getRoleDescription(role);
+							return description;
+						}));
+					}
 
+					const room = await this.getDirect(user.username);
+
+					this.setState({ roomUser: user, room: { ...roomState, rid: room.rid } });
+				}
+			} catch {
+				// do nothing
+			}
+		}
+	}
+
+	loadRoom = async() => {
 		const { navigation } = this.props;
 		let room = navigation.getParam('room');
 		if (room && room.observe) {
@@ -117,63 +214,68 @@ class RoomInfoView extends React.Component {
 			this.subscription = this.roomObservable
 				.subscribe((changes) => {
 					this.setState({ room: changes });
+					navigation.setParams({ room: changes });
 				});
 		} else {
 			try {
 				const result = await RocketChat.getRoomInfo(this.rid);
 				if (result.success) {
-					// eslint-disable-next-line prefer-destructuring
-					room = result.room;
+					({ room } = result);
 					this.setState({ room });
 				}
 			} catch (e) {
 				log(e);
 			}
 		}
+
 		const permissions = await RocketChat.hasPermission([PERMISSION_EDIT_ROOM], room.rid);
-		if (permissions[PERMISSION_EDIT_ROOM] && !room.prid && this.t !== 'l') {
+		if (permissions[PERMISSION_EDIT_ROOM] && !room.prid) {
 			navigation.setParams({ showEdit: true });
 		}
 	}
 
-	componentWillUnmount() {
-		if (this.subscription && this.subscription.unsubscribe) {
-			this.subscription.unsubscribe();
-		}
-	}
-
-	goRoom = async() => {
-		const { roomUser } = this.state;
-		const { username } = roomUser;
-		const { navigation } = this.props;
+	getDirect = async(username) => {
 		try {
 			const result = await RocketChat.createDirectMessage(username);
 			if (result.success) {
-				await navigation.navigate('RoomsListView');
-				const rid = result.room._id;
-				navigation.navigate('RoomView', { rid, name: RocketChat.getRoomTitle(roomUser), t: 'd' });
+				return result.room;
 			}
-		} catch (e) {
+		} catch {
 			// do nothing
 		}
 	}
 
-	videoCall = () => RocketChat.callJitsi(this.rid)
+	goRoom = () => {
+		const { roomUser, room } = this.state;
+		const { name, username } = roomUser;
+		const { rooms, navigation, split } = this.props;
 
-	isDirect = () => this.t === 'd'
+		if (room.rid) {
+			let navigate = navigation.push;
 
-	renderItem = ({ label, content }) => {
-		const { theme } = this.props;
-		return (
-			<View style={styles.item}>
-				<Text accessibilityLabel={label} style={[styles.itemLabel, { color: themes[theme].titleText }]}>{label}</Text>
-				<Markdown
-					style={[styles.itemContent, { color: themes[theme].auxiliaryText }]}
-					msg={content || `__${ I18n.t('No_label_provided', { label: label.toLowerCase() }) }__`}
-					theme={theme}
-				/>
-			</View>
-		);
+			// if this is a room focused
+			if (rooms.includes(room.rid)) {
+				({ navigate } = navigation);
+			} else if (split) {
+				({ navigate } = Navigation);
+			}
+
+			navigate('RoomView', {
+				rid: room.rid,
+				name: RocketChat.getRoomTitle({
+					t: room.t,
+					fname: name,
+					name: username
+				}),
+				t: room.t,
+				roomUserId: RocketChat.getUidDirectMessage(room)
+			});
+		}
+	}
+
+	videoCall = () => {
+		const { room } = this.state;
+		RocketChat.callJitsi(room.rid);
 	}
 
 	renderAvatar = (room, roomUser) => {
@@ -193,11 +295,6 @@ class RoomInfoView extends React.Component {
 			</Avatar>
 		);
 	}
-
-	renderBroadcast = () => this.renderItem({
-		label: I18n.t('Broadcast_Channel'),
-		content: I18n.t('Broadcast_channel_Description')
-	});
 
 	renderButton = (onPress, iconName, text) => {
 		const { theme } = this.props;
@@ -223,17 +320,16 @@ class RoomInfoView extends React.Component {
 		</View>
 	)
 
-	renderChannel = () => {
-		const { room } = this.state;
-		const { description, topic, announcement } = room;
-		return (
-			<>
-				{this.renderItem({ label: I18n.t('Description'), content: description })}
-				{this.renderItem({ label: I18n.t('Topic'), content: topic })}
-				{this.renderItem({ label: I18n.t('Announcement'), content: announcement })}
-				{room.broadcast ? this.renderBroadcast() : null}
-			</>
-		);
+	renderContent = () => {
+		const { room, roomUser } = this.state;
+		const { theme } = this.props;
+
+		if (this.isDirect) {
+			return <Direct roomUser={roomUser} theme={theme} />;
+		} else if (this.t === 'l') {
+			return <Livechat room={room} roomUser={roomUser} theme={theme} />;
+		}
+		return <Channel room={room} theme={theme} />;
 	}
 
 	onMessage = (e) => {
@@ -262,10 +358,6 @@ class RoomInfoView extends React.Component {
 			room, roomUser, webViewHeight, webViewLoading
 		} = this.state;
 		const { theme } = this.props;
-		const isDirect = this.isDirect();
-		if (!room) {
-			return <View />;
-		}
 		return (
 			<ScrollView style={[styles.scroll, { backgroundColor: themes[theme].auxiliaryBackground }]}>
 				<StatusBar theme={theme} />
@@ -274,10 +366,10 @@ class RoomInfoView extends React.Component {
 					forceInset={{ vertical: 'never' }}
 					testID='room-info-view'
 				>
-					<View style={[styles.avatarContainer, isDirect && styles.avatarContainerDirectRoom, { backgroundColor: themes[theme].auxiliaryBackground }]}>
+					<View style={[styles.avatarContainer, this.isDirect && styles.avatarContainerDirectRoom, { backgroundColor: themes[theme].auxiliaryBackground }]}>
 						{this.renderAvatar(room, roomUser)}
-						<View style={styles.roomTitleContainer}>{ getRoomTitle(room, this.t, roomUser && roomUser.name, roomUser && roomUser.username, roomUser && roomUser.statusText, theme) }</View>
-						{isDirect ? this.renderButtons() : null}
+						<View style={styles.roomTitleContainer}>{ getRoomTitle(room, this.t, roomUser?.name, roomUser?.username, roomUser?.statusText, theme) }</View>
+						{this.isDirect ? this.renderButtons() : null}
 					</View>
 					<WebView
 						source={{ uri: `https://app.milchjugend.ch/members/${ roomUser.username }/` }}
@@ -305,7 +397,7 @@ class RoomInfoView extends React.Component {
 							size='large'
 						/>
 					)}
-					{!isDirect && this.renderChannel()}
+					{this.renderContent()}
 				</SafeAreaView>
 			</ScrollView>
 		);
@@ -315,7 +407,7 @@ class RoomInfoView extends React.Component {
 const mapStateToProps = state => ({
 	baseUrl: state.server.server,
 	user: getUserSelector(state),
-	Message_TimeFormat: state.settings.Message_TimeFormat
+	rooms: state.room.rooms
 });
 
-export default connect(mapStateToProps)(withTheme(RoomInfoView));
+export default connect(mapStateToProps)(withSplit(withTheme(RoomInfoView)));

@@ -46,6 +46,8 @@ import TwoFactor from './containers/TwoFactor';
 
 import RoomsListView from './views/RoomsListView';
 import RoomView from './views/RoomView';
+import ScreenLockedView from './views/ScreenLockedView';
+import ChangePasscodeView from './views/ChangePasscodeView';
 
 if (isIOS) {
 	const RNScreens = require('react-native-screens');
@@ -166,6 +168,15 @@ const ChatsStack = createStackNavigator({
 	NotificationPrefView: {
 		getScreen: () => require('./views/NotificationPreferencesView').default
 	},
+	VisitorNavigationView: {
+		getScreen: () => require('./views/VisitorNavigationView').default
+	},
+	ForwardLivechatView: {
+		getScreen: () => require('./views/ForwardLivechatView').default
+	},
+	LivechatEditView: {
+		getScreen: () => require('./views/LivechatEditView').default
+	},
 	PickerView: {
 		getScreen: () => require('./views/PickerView').default
 	},
@@ -259,6 +270,9 @@ const SettingsStack = createStackNavigator({
 	},
 	DefaultBrowserView: {
 		getScreen: () => require('./views/DefaultBrowserView').default
+	},
+	ScreenLockConfigView: {
+		getScreen: () => require('./views/ScreenLockConfigView').default
 	}
 }, {
 	defaultNavigationOptions: defaultHeader,
@@ -553,7 +567,7 @@ class CustomModalStack extends React.Component {
 		const pageSheetViews = ['AttachmentView'];
 		const pageSheet = pageSheetViews.includes(getActiveRouteName(navigation.state));
 
-		const androidProps = isAndroid && {
+		const androidProps = isAndroid && !pageSheet && {
 			style: { marginBottom: 0 }
 		};
 
@@ -563,7 +577,7 @@ class CustomModalStack extends React.Component {
 			</View>
 		);
 
-		if (isAndroid) {
+		if (isAndroid && !pageSheet) {
 			content = (
 				<ScrollView overScrollMode='never'>
 					{content}
@@ -766,6 +780,8 @@ export default class Root extends React.Component {
 					>
 						{content}
 						<TwoFactor />
+						<ScreenLockedView />
+						<ChangePasscodeView />
 					</ThemeContext.Provider>
 				</Provider>
 			</AppearanceProvider>
