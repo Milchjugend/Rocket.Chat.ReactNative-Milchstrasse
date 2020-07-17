@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { View } from 'react-native';
 import FastImage from 'react-native-fast-image';
@@ -8,8 +8,8 @@ import { settings as RocketChatSettings } from '@rocket.chat/sdk';
 import { avatarURL } from '../utils/avatar';
 import Emoji from './markdown/Emoji';
 
-const Avatar = React.memo(({
-	text, size, baseUrl, borderRadius, style, avatar, type, children, userId, token, onPress, theme, emoji, getCustomEmoji
+const Avatar = ({
+	text, size, baseUrl, borderRadius, style, avatar, type, children, userId, token, onPress, theme, emoji, getCustomEmoji, forceReload
 }) => {
 	const avatarStyle = {
 		width: size,
@@ -17,13 +17,23 @@ const Avatar = React.memo(({
 		borderRadius
 	};
 
+	const [, setValue] = useState(0);
+
+	useEffect(() => {
+		setValue(value => value + 1);
+	}, [forceReload]);
+
 	if (!text && !avatar) {
 		return null;
 	}
 
-	const uri = avatarURL({
+	let uri = avatarURL({
 		type, text, size, userId, token, avatar, baseUrl
 	});
+
+	if (forceReload) {
+		uri += `&tc=${ forceReload }`;
+	}
 
 	let image = emoji ? (
 		<Emoji
@@ -59,7 +69,7 @@ const Avatar = React.memo(({
 			{children}
 		</View>
 	);
-});
+};
 
 Avatar.propTypes = {
 	baseUrl: PropTypes.string.isRequired,

@@ -9,8 +9,8 @@ import { SafeAreaView } from 'react-navigation';
 import UAParser from 'ua-parser-js';
 import _ from 'lodash';
 
-import database from '../../lib/database';
 import WebView from 'react-native-webview';
+import database from '../../lib/database';
 import { CustomIcon } from '../../lib/Icons';
 import Status from '../../containers/Status';
 import Avatar from '../../containers/Avatar';
@@ -33,7 +33,6 @@ import Navigation from '../../lib/Navigation';
 import Livechat from './Livechat';
 import Channel from './Channel';
 import Item from './Item';
-import Direct from './Direct';
 
 const PERMISSION_EDIT_ROOM = 'edit-room';
 const getRoomTitle = (room, type, name, username, statusText, theme) => (type === 'd'
@@ -321,11 +320,43 @@ class RoomInfoView extends React.Component {
 	)
 
 	renderContent = () => {
-		const { room, roomUser } = this.state;
+		const {
+			room, roomUser, webViewHeight, webViewLoading
+		} = this.state;
 		const { theme } = this.props;
 
 		if (this.isDirect) {
-			return <Direct roomUser={roomUser} theme={theme} />;
+			return (
+				<>
+					<WebView
+						source={{ uri: `https://app.milchjugend.ch/members/${ roomUser.username }/?minimal=true` }}
+						style={{ height: webViewHeight }}
+						javaScriptEnabled
+						scrollEnabled={false}
+						onMessage={this.onMessage}
+						injectedJavaScript={script}
+						onLoadStart={() => (this.showSpinner())}
+						onLoad={() => this.hideSpinner()}
+						ref={this.webview}
+						// onNavigationStateChange={this.handleNavigationStateChange}
+					/>
+					{webViewLoading && (
+						<ActivityIndicator
+							style={{
+								flex: 1,
+								left: 0,
+								right: 0,
+								top: 0,
+								bottom: 0,
+								position: 'relative',
+								alignItems: 'center',
+								justifyContent: 'center'
+							}}
+							size='large'
+						/>
+					)}
+				</>
+			);
 		} else if (this.t === 'l') {
 			return <Livechat room={room} roomUser={roomUser} theme={theme} />;
 		}
@@ -346,8 +377,8 @@ class RoomInfoView extends React.Component {
 		this.setState({ webViewLoading: true });
 	};
 
-	handleNavigationStateChange=(event, username) => {
-		if (event.url && !event.url.includes(username)) {
+	handleNavigationStateChange=(event) => {
+		if (event.url && event.url.includes('app.milchjugend.ch/members/?')) {
 			this.webview.current.stopLoading();
 			Linking.openURL(event.url);
 		}
@@ -355,7 +386,7 @@ class RoomInfoView extends React.Component {
 
 	render() {
 		const {
-			room, roomUser, webViewHeight, webViewLoading
+			room, roomUser
 		} = this.state;
 		const { theme } = this.props;
 		return (
@@ -371,32 +402,6 @@ class RoomInfoView extends React.Component {
 						<View style={styles.roomTitleContainer}>{ getRoomTitle(room, this.t, roomUser?.name, roomUser?.username, roomUser?.statusText, theme) }</View>
 						{this.isDirect ? this.renderButtons() : null}
 					</View>
-					<WebView
-						source={{ uri: `https://app.milchjugend.ch/members/${ roomUser.username }/` }}
-						style={{ height: webViewHeight }}
-						javaScriptEnabled
-						scrollEnabled={false}
-						onMessage={this.onMessage}
-						injectedJavaScript={script}
-						onLoadStart={() => (this.showSpinner())}
-						onLoad={() => this.hideSpinner()}
-						ref={this.webview}
-					/>
-					{webViewLoading && (
-						<ActivityIndicator
-							style={{
-								flex: 1,
-								left: 0,
-								right: 0,
-								top: 0,
-								bottom: 0,
-								position: 'relative',
-								alignItems: 'center',
-								justifyContent: 'center'
-							}}
-							size='large'
-						/>
-					)}
 					{this.renderContent()}
 				</SafeAreaView>
 			</ScrollView>

@@ -43,6 +43,7 @@ class BrowserView extends React.Component {
 					ref={this.webview}
 					onNavigationStateChange={this.handleNavigationStateChange}
 					style={style}
+					decelerationRate='normal'
 				/>
 				{visible && (
 					<ActivityIndicator
@@ -67,7 +68,7 @@ class BrowserView extends React.Component {
 
 BrowserView.propTypes = {
 	url: PropTypes.string,
-	style: PropTypes.object,
+	style: PropTypes.object
 };
 
 export default BrowserView;

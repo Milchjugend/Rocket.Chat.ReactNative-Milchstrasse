@@ -238,6 +238,9 @@ class Sidebar extends Component {
 			user, Site_Name, baseUrl, useRealName, allowStatusMessage, split, theme
 		} = this.props;
 
+		const date = new Date();
+		const timestamp = date.getTime();
+
 		if (!user) {
 			return null;
 		}
@@ -262,6 +265,7 @@ class Sidebar extends Component {
 							baseUrl={baseUrl}
 							userId={user.id}
 							token={user.token}
+							forceReload={timestamp}
 						/>
 						<View style={styles.headerTextContainer}>
 							<View style={styles.headerUsername}>
