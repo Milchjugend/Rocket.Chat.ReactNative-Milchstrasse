@@ -130,6 +130,10 @@ class RoomInfoView extends React.Component {
 		if (this.willFocusListener && this.willFocusListener.remove) {
 			this.willFocusListener.remove();
 		}
+		const { room } = this.state;
+		if (room.msgs === 0) {
+			this.removeRoom(room.rid, room.t);
+		}
 	}
 
 	get isDirect() {
@@ -196,8 +200,7 @@ class RoomInfoView extends React.Component {
 					}
 
 					const room = await this.getDirect(user.username);
-
-					this.setState({ roomUser: user, room: { ...roomState, rid: room.rid } });
+					this.setState({ roomUser: user, room: { ...roomState, rid: room._id, msgs: room.msgs } });
 				}
 			} catch {
 				// do nothing
@@ -239,6 +242,15 @@ class RoomInfoView extends React.Component {
 			if (result.success) {
 				return result.room;
 			}
+		} catch {
+			// do nothing
+		}
+	}
+
+	removeRoom = async(rid, t) => {
+		try {
+			const result = await RocketChat.hideRoom(rid, t);
+			return result;
 		} catch {
 			// do nothing
 		}
