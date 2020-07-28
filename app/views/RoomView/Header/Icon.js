@@ -5,9 +5,8 @@ import PropTypes from 'prop-types';
 import { STATUS_COLORS, themes } from '../../../constants/colors';
 import { CustomIcon } from '../../../lib/Icons';
 import Status from '../../../containers/Status/Status';
-import { isAndroid } from '../../../utils/deviceInfo';
 
-const ICON_SIZE = 18;
+const ICON_SIZE = 15;
 
 const styles = StyleSheet.create({
 	type: {
@@ -32,16 +31,16 @@ const Icon = React.memo(({
 	if (type === 'l') {
 		colorStyle = { color: STATUS_COLORS[status] };
 	} else {
-		colorStyle = { color: isAndroid && theme === 'light' ? themes[theme].buttonText : themes[theme].auxiliaryText };
+		colorStyle = { color: themes[theme].auxiliaryText };
 	}
 
 	let icon;
 	if (type === 'discussion') {
 		icon = 'chat';
 	} else if (type === 'thread') {
-		icon = 'thread';
+		icon = 'threads';
 	} else if (type === 'c') {
-		icon = 'hashtag';
+		icon = 'hash';
 	} else if (type === 'l') {
 		icon = 'livechat';
 	} else if (type === 'd') {

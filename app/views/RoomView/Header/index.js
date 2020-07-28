@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { responsive } from 'react-native-responsive-ui';
 import equal from 'deep-equal';
 
 import Header from './Header';
+import LeftButtons from './LeftButtons';
 import RightButtons from './RightButtons';
 import { withTheme } from '../../../theme';
-import RoomHeaderLeft from './RoomHeaderLeft';
+import { withDimensions } from '../../../dimensions';
+import I18n from '../../../i18n';
 
 class RoomHeaderView extends Component {
 	static propTypes = {
@@ -17,19 +18,21 @@ class RoomHeaderView extends Component {
 		prid: PropTypes.string,
 		tmid: PropTypes.string,
 		usersTyping: PropTypes.string,
-		window: PropTypes.object,
 		status: PropTypes.string,
 		statusText: PropTypes.string,
 		connecting: PropTypes.bool,
+		connected: PropTypes.bool,
 		theme: PropTypes.string,
 		roomUserId: PropTypes.string,
 		widthOffset: PropTypes.number,
-		goRoomActionsView: PropTypes.func
+		goRoomActionsView: PropTypes.func,
+		width: PropTypes.number,
+		height: PropTypes.number
 	};
 
 	shouldComponentUpdate(nextProps) {
 		const {
-			type, title, subtitle, status, statusText, window, connecting, goRoomActionsView, usersTyping, theme
+			type, title, subtitle, status, statusText, connecting, connected, goRoomActionsView, usersTyping, theme, width, height
 		} = this.props;
 		if (nextProps.theme !== theme) {
 			return true;
@@ -52,10 +55,13 @@ class RoomHeaderView extends Component {
 		if (nextProps.connecting !== connecting) {
 			return true;
 		}
-		if (nextProps.window.width !== window.width) {
+		if (nextProps.connected !== connected) {
 			return true;
 		}
-		if (nextProps.window.height !== window.height) {
+		if (nextProps.width !== width) {
+			return true;
+		}
+		if (nextProps.height !== height) {
 			return true;
 		}
 		if (!equal(nextProps.usersTyping, usersTyping)) {
@@ -69,8 +75,17 @@ class RoomHeaderView extends Component {
 
 	render() {
 		const {
-			window, title, subtitle, type, prid, tmid, widthOffset, status = 'offline', statusText, connecting, usersTyping, goRoomActionsView, roomUserId, theme
+			title, subtitle: subtitleProp, type, prid, tmid, widthOffset, status = 'offline', statusText, connecting, connected, usersTyping, goRoomActionsView, roomUserId, theme, width, height
 		} = this.props;
+
+		let subtitle;
+		if (connecting) {
+			subtitle = I18n.t('Connecting');
+		} else if (!connected) {
+			subtitle = I18n.t('Waiting_for_network');
+		} else {
+			subtitle = subtitleProp;
+		}
 
 		return (
 			<Header
@@ -80,8 +95,8 @@ class RoomHeaderView extends Component {
 				subtitle={type === 'd' ? statusText : subtitle}
 				type={type}
 				status={status}
-				width={window.width}
-				height={window.height}
+				width={width}
+				height={height}
 				theme={theme}
 				usersTyping={usersTyping}
 				widthOffset={widthOffset}
@@ -107,13 +122,14 @@ const mapStateToProps = (state, ownProps) => {
 	}
 
 	return {
-		connecting: state.meteor.connecting,
+		connecting: state.meteor.connecting || state.server.loading,
+		connected: state.meteor.connected,
 		usersTyping: state.usersTyping,
 		status,
 		statusText
 	};
 };
 
-export default responsive(connect(mapStateToProps)(withTheme(RoomHeaderView)));
+export default connect(mapStateToProps)(withDimensions(withTheme(RoomHeaderView)));
 
-export { RightButtons, RoomHeaderLeft };
+export { RightButtons, LeftButtons };
