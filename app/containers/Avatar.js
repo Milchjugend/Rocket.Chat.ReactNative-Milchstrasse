@@ -85,7 +85,8 @@ Avatar.propTypes = {
 	token: PropTypes.string,
 	theme: PropTypes.string,
 	onPress: PropTypes.func,
-	getCustomEmoji: PropTypes.func
+	getCustomEmoji: PropTypes.func,
+	forceReload: PropTypes.string
 };
 
 Avatar.defaultProps = {

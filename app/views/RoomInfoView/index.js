@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-	View, Text, ScrollView, ActivityIndicator, Linking
+	View, Text, ScrollView, ActivityIndicator
 } from 'react-native';
 import { BorderlessButton } from 'react-native-gesture-handler';
 import { connect } from 'react-redux';
@@ -29,7 +29,6 @@ import Markdown from '../../containers/markdown';
 import Livechat from './Livechat';
 import Channel from './Channel';
 import Item from './Item';
-import Direct from './Direct';
 import SafeAreaView from '../../containers/SafeAreaView';
 import { goRoom } from '../../utils/goRoom';
 import Navigation from '../../lib/Navigation';
@@ -50,6 +49,12 @@ const getRoomTitle = (room, type, name, username, statusText, theme) => (type ==
 		</View>
 	)
 );
+
+const script = `
+    window.ReactNativeWebView.postMessage(
+      Math.max(document.documentElement.clientHeight, document.documentElement.scrollHeight, document.body.clientHeight, document.body.scrollHeight)
+    );
+`;
 
 class RoomInfoView extends React.Component {
 	static propTypes = {

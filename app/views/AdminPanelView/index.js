@@ -19,7 +19,7 @@ class AdminPanelView extends React.Component {
 	static propTypes = {
 		baseUrl: PropTypes.string,
 		token: PropTypes.string,
-		theme: PropTypes.string
+		theme: PropTypes.string,
 	}
 
 	render() {

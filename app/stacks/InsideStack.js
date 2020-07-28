@@ -55,6 +55,10 @@ import JitsiMeetView from '../views/JitsiMeetView';
 import StatusView from '../views/StatusView';
 import ShareView from '../views/ShareView';
 import CreateDiscussionView from '../views/CreateDiscussionView';
+import CommunityProfileView from '../views/CommunityProfileView';
+import AgendaView from '../views/AgendaView';
+import CommunityView from '../views/CommunityView';
+import WebsiteView from "../views/WebsiteView";
 
 // ChatsStackNavigator
 const ChatsStack = createStackNavigator();
@@ -164,6 +168,11 @@ const ChatsStackNavigator = () => {
 				component={ReadReceiptsView}
 				options={ReadReceiptsView.navigationOptions}
 			/>
+			<ChatsStack.Screen
+				name='WebsiteView'
+				component={WebsiteView}
+				options={WebsiteView.navigationOptions}
+			/>
 		</ChatsStack.Navigator>
 	);
 };
@@ -219,6 +228,54 @@ const SettingsStackNavigator = () => {
 	);
 };
 
+// CommunityProfileStackNavigator
+const CommunityProfileStack = createStackNavigator();
+const CommunityProfileStackNavigator = () => {
+	const { theme } = React.useContext(ThemeContext);
+
+	return (
+		<CommunityProfileStack.Navigator screenOptions={{ ...defaultHeader, ...themedHeader(theme), ...StackAnimation }}>
+			<CommunityProfileStack.Screen
+				name='CommunityProfileView'
+				component={CommunityProfileView}
+				options={CommunityProfileView.navigationOptions}
+			/>
+		</CommunityProfileStack.Navigator>
+	);
+};
+
+// AgendaStackNavigator
+const AgendaStack = createStackNavigator();
+const AgendaStackNavigator = () => {
+	const { theme } = React.useContext(ThemeContext);
+
+	return (
+		<AgendaStack.Navigator screenOptions={{ ...defaultHeader, ...themedHeader(theme), ...StackAnimation }}>
+			<AgendaStack.Screen
+				name='AgendaView'
+				component={AgendaView}
+				options={AgendaView.navigationOptions}
+			/>
+		</AgendaStack.Navigator>
+	);
+};
+
+// AgendaStackNavigator
+const CommunityStack = createStackNavigator();
+const CommunityStackNavigator = () => {
+	const { theme } = React.useContext(ThemeContext);
+
+	return (
+		<CommunityStack.Navigator screenOptions={{ ...defaultHeader, ...themedHeader(theme), ...StackAnimation }}>
+			<CommunityStack.Screen
+				name='CommunityView'
+				component={CommunityView}
+				options={CommunityView.navigationOptions}
+			/>
+		</CommunityStack.Navigator>
+	);
+};
+
 // AdminPanelStackNavigator
 const AdminPanelStack = createStackNavigator();
 const AdminPanelStackNavigator = () => {
@@ -247,6 +304,9 @@ const DrawerNavigator = () => (
 		<Drawer.Screen name='ProfileStackNavigator' component={ProfileStackNavigator} />
 		<Drawer.Screen name='SettingsStackNavigator' component={SettingsStackNavigator} />
 		<Drawer.Screen name='AdminPanelStackNavigator' component={AdminPanelStackNavigator} />
+		<Drawer.Screen name='CommunityProfileStackNavigator' component={CommunityProfileStackNavigator} />
+		<Drawer.Screen name='AgendaStackNavigator' component={AgendaStackNavigator} />
+		<Drawer.Screen name='CommunityStackNavigator' component={CommunityStackNavigator} />
 	</Drawer.Navigator>
 );
 

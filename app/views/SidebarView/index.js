@@ -201,31 +201,31 @@ class Sidebar extends Component {
 				/>
 				<SidebarItem
 					text={I18n.t('Channel_Directory')}
-					left={<CustomIcon name='hashtag' size={20} color={themes[theme].titleText} />}
+					left={<CustomIcon name='hash' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('DirectoryView')}
 					testID='sidebar-channels'
 					current={this.currentItemKey === 'ChannelDirectoryStack'}
 				/>
 				<SidebarItem
 					text={I18n.t('Community_Profile')}
-					left={<CustomIcon name='discover' size={20} color={themes[theme].titleText} />}
-					onPress={this.onPressCommunityProfile}
+					left={<CustomIcon name='directory' size={20} color={themes[theme].titleText} />}
+					onPress={() => this.sidebarNavigate('CommunityProfileStackNavigator')}
 					testID='sidebar-community-profile'
-					current={this.currentItemKey === 'CommunityProfileStack'}
+					current={this.currentItemKey === 'CommunityProfileStackNavigator'}
 				/>
 				<SidebarItem
 					text={I18n.t('Community')}
 					left={<CustomIcon name='team' size={20} color={themes[theme].titleText} />}
-					onPress={this.onPressCommunity}
+					onPress={() => this.sidebarNavigate('CommunityStackNavigator')}
 					testID='sidebar-community'
-					current={this.currentItemKey === 'CommunityStack'}
+					current={this.currentItemKey === 'CommunityStackNavigator'}
 				/>
 				<SidebarItem
 					text={I18n.t('Agenda')}
 					left={<CustomIcon name='calendar' size={20} color={themes[theme].titleText} />}
-					onPress={this.onPressAgenda}
+					onPress={() => this.sidebarNavigate('AgendaStackNavigator')}
 					testID='sidebar-agenda'
-					current={this.currentItemKey === 'AgendaStack'}
+					current={this.currentItemKey === 'AgendaStackNavigator'}
 				/>
 				<SidebarItem
 					text={I18n.t('Chat_Profile_Image')}

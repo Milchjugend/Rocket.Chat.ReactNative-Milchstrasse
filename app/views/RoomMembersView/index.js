@@ -114,31 +114,12 @@ class RoomMembersView extends React.Component {
 		this.setState({ filtering: !!text, membersFiltered });
 	})
 
-	onPressUser = async(item) => {
-		try {
-			const db = database.active;
-			const subsCollection = db.collections.get('subscriptions');
-			const query = await subsCollection.query(Q.where('name', item.username)).fetch();
-			if (query.length) {
-				const [room] = query;
-				this.goRoom(room);
-			} else {
-				const result = await RocketChat.createDirectMessage(item.username);
-				if (result.success) {
-					this.goRoom({ rid: result.room?._id, name: item.username, t: 'd' });
-				}
-			}
-		} catch (e) {
-			log(e);
-		}
+	onPressUser = (item) => {
+		const { navigation } = this.props;
+		navigation.navigate('RoomInfoView', {
+			rid: item._id, name: item.username, t: 'd'
+		});
 	}
-
-//	onPressUser = (item) => {
-//		const { navigation } = this.props;
-//		navigation.navigate('RoomInfoView', {
-//			rid: item._id, name: item.username, t: 'd'
-//		});
-//	}
 
 	onLongPressUser = (user) => {
 		if (!this.permissions['mute-user']) {

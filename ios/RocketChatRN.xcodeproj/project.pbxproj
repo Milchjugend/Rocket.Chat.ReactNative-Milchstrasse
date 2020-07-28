@@ -31,6 +31,12 @@
 		1EDDE57A22DFAD8E0078F69D /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EDDE57922DFAD8E0078F69D /* Images.xcassets */; };
 		24A2AEF2383D44B586D31C01 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 06BB44DD4855498082A744AD /* libz.tbd */; };
 		50046CB6BDA69B9232CF66D9 /* libPods-RocketChatRN.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C235DC7B31A4D1578EDEF219 /* libPods-RocketChatRN.a */; };
+		720B72D724D059280042ACCC /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 720B72D624D059270042ACCC /* GoogleService-Info.plist */; };
+		720B72D824D059280042ACCC /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 720B72D624D059270042ACCC /* GoogleService-Info.plist */; };
+		72AF80E624D07ECA00C93C8F /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 72AF80E424D07EC900C93C8F /* assets */; };
+		72AF80E724D07ECA00C93C8F /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 72AF80E424D07EC900C93C8F /* assets */; };
+		72AF80EC24D0862400C93C8F /* main.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = 72AF80EB24D0862400C93C8F /* main.jsbundle */; };
+		72AF80ED24D0862400C93C8F /* main.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = 72AF80EB24D0862400C93C8F /* main.jsbundle */; };
 		7A0D62D2242AB187006D5C06 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A0D62D1242AB187006D5C06 /* LaunchScreen.storyboard */; };
 		7AAA749E23043B1E00F1ADE9 /* Watermelon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AAA749D23043B1E00F1ADE9 /* Watermelon.swift */; };
 		7AC99C1C2339361F0000A0CB /* Watermelon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AAA749D23043B1E00F1ADE9 /* Watermelon.swift */; };
@@ -70,7 +76,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		008F07F21AC5B25A0029DE68 /* main.jsbundle */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
 		037C33B0D9A54FB4CB670FB7 /* Pods-ShareRocketChatRN.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareRocketChatRN.release.xcconfig"; path = "Pods/Target Support Files/Pods-ShareRocketChatRN/Pods-ShareRocketChatRN.release.xcconfig"; sourceTree = "<group>"; };
 		0383633C4523666C176CAA52 /* Pods-ShareRocketChatRN.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareRocketChatRN.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ShareRocketChatRN/Pods-ShareRocketChatRN.debug.xcconfig"; sourceTree = "<group>"; };
 		06BB44DD4855498082A744AD /* libz.tbd */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
@@ -99,6 +104,9 @@
 		290E43E48AD8418287FA99D6 /* WatermelonDB.xcodeproj */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "wrapper.pb-project"; name = WatermelonDB.xcodeproj; path = "../node_modules/@nozbe/watermelondb/native/ios/WatermelonDB.xcodeproj"; sourceTree = "<group>"; };
 		60B2A6A31FC4588700BD58E5 /* RocketChatRN.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = RocketChatRN.entitlements; path = RocketChatRN/RocketChatRN.entitlements; sourceTree = "<group>"; };
 		66D6B1D0567051BE541450C9 /* Pods-RocketChatRN.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RocketChatRN.release.xcconfig"; path = "Pods/Target Support Files/Pods-RocketChatRN/Pods-RocketChatRN.release.xcconfig"; sourceTree = "<group>"; };
+		720B72D624D059270042ACCC /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		72AF80E424D07EC900C93C8F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = "<group>"; };
+		72AF80EB24D0862400C93C8F /* main.jsbundle */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
 		7A0D62D1242AB187006D5C06 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		7AAA749C23043B1D00F1ADE9 /* RocketChatRN-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RocketChatRN-Bridging-Header.h"; sourceTree = "<group>"; };
 		7AAA749D23043B1E00F1ADE9 /* Watermelon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Watermelon.swift; sourceTree = "<group>"; };
@@ -149,9 +157,11 @@
 			isa = PBXGroup;
 			children = (
 				60B2A6A31FC4588700BD58E5 /* RocketChatRN.entitlements */,
-				008F07F21AC5B25A0029DE68 /* main.jsbundle */,
+				72AF80E424D07EC900C93C8F /* assets */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
+				720B72D624D059270042ACCC /* GoogleService-Info.plist */,
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
+				72AF80EB24D0862400C93C8F /* main.jsbundle */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				13B07FB71A68108700A75B9A /* main.m */,
@@ -322,9 +332,9 @@
 				ORGANIZATIONNAME = Facebook;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = S6UPZG7ZR3;
+						DevelopmentTeam = 5WHJYXZ8C3;
 						LastSwiftMigration = 1030;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
@@ -342,8 +352,8 @@
 					};
 					1EC6ACAF22CB9FC300A41C61 = {
 						CreatedOnToolsVersion = 10.2.1;
-						DevelopmentTeam = S6UPZG7ZR3;
-						ProvisioningStyle = Manual;
+						DevelopmentTeam = 5WHJYXZ8C3;
+						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
@@ -393,7 +403,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				72AF80E624D07ECA00C93C8F /* assets in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				720B72D724D059280042ACCC /* GoogleService-Info.plist in Resources */,
+				72AF80EC24D0862400C93C8F /* main.jsbundle in Resources */,
 				1E0DBC59247D75C40086559B /* custom.ttf in Resources */,
 				7A0D62D2242AB187006D5C06 /* LaunchScreen.storyboard in Resources */,
 			);
@@ -403,7 +416,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				72AF80E724D07ECA00C93C8F /* assets in Resources */,
 				1EDDE57A22DFAD8E0078F69D /* Images.xcassets in Resources */,
+				720B72D824D059280042ACCC /* GoogleService-Info.plist in Resources */,
+				72AF80ED24D0862400C93C8F /* main.jsbundle in Resources */,
 				1E0DBC5A247D75C40086559B /* custom.ttf in Resources */,
 				1EC6ACB722CB9FC300A41C61 /* MainInterface.storyboard in Resources */,
 			);
@@ -696,10 +712,11 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = RocketChatRN/RocketChatRN.entitlements;
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 100;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 117;
 				DEAD_CODE_STRIPPING = NO;
-				DEVELOPMENT_TEAM = S6UPZG7ZR3;
+				DEVELOPMENT_TEAM = 5WHJYXZ8C3;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -717,6 +734,7 @@
 					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
 					"$(inherited)",
 				);
+				MARKETING_VERSION = 4.9.0;
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DFB_SONARKIT_ENABLED=1",
@@ -726,9 +744,9 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = chat.rocket.reactnative;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.milchjugend.milchstrasse;
 				PRODUCT_NAME = RocketChatRN;
-				PROVISIONING_PROFILE_SPECIFIER = "chat.rocket.reactnative Development";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "RocketChatRN-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -747,10 +765,11 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = "";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = RocketChatRN/RocketChatRN.entitlements;
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 100;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 117;
 				DEAD_CODE_STRIPPING = NO;
-				DEVELOPMENT_TEAM = S6UPZG7ZR3;
+				DEVELOPMENT_TEAM = 5WHJYXZ8C3;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -768,6 +787,7 @@
 					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
 					"$(inherited)",
 				);
+				MARKETING_VERSION = 4.9.0;
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DFB_SONARKIT_ENABLED=1",
@@ -777,9 +797,9 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = chat.rocket.reactnative;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.milchjugend.milchstrasse;
 				PRODUCT_NAME = RocketChatRN;
-				PROVISIONING_PROFILE_SPECIFIER = "match AppStore chat.rocket.reactnative";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "RocketChatRN-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -809,9 +829,11 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = ShareRocketChatRN/ShareRocketChatRN.entitlements;
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 117;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = S6UPZG7ZR3;
+				DEVELOPMENT_TEAM = 5WHJYXZ8C3;
 				ENABLE_BITCODE = NO;
 				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -836,15 +858,16 @@
 					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
 					"$(inherited)",
 				);
+				MARKETING_VERSION = 4.9.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DFB_SONARKIT_ENABLED=1",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = chat.rocket.reactnative.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.milchjugend.milchstrasse.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "Development chat.rocket.reactnative.ShareExtension";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -873,10 +896,12 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = ShareRocketChatRN/ShareRocketChatRN.entitlements;
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 117;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = S6UPZG7ZR3;
+				DEVELOPMENT_TEAM = 5WHJYXZ8C3;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -900,14 +925,15 @@
 					"$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)",
 					"$(inherited)",
 				);
+				MARKETING_VERSION = 4.9.0;
 				MTL_FAST_MATH = YES;
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DFB_SONARKIT_ENABLED=1",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = chat.rocket.reactnative.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.milchjugend.milchstrasse.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "chat.rocket.reactnative.ShareExtension AppStore";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
