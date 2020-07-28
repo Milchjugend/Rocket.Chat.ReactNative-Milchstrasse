@@ -5,13 +5,11 @@ import ActionSheet from 'react-native-action-sheet';
 import { connect } from 'react-redux';
 import { SafeAreaView } from 'react-navigation';
 import * as Haptics from 'expo-haptics';
-import { Q } from '@nozbe/watermelondb';
 
 import styles from './styles';
 import UserItem from '../../presentation/UserItem';
 import scrollPersistTaps from '../../utils/scrollPersistTaps';
 import RocketChat from '../../lib/rocketchat';
-import database from '../../lib/database';
 import { LISTENER } from '../../containers/Toast';
 import EventEmitter from '../../utils/events';
 import log from '../../utils/log';
@@ -67,7 +65,7 @@ class RoomMembersView extends React.Component {
 		const room = props.navigation.getParam('room');
 		this.state = {
 			isLoading: false,
-			allUsers: false,
+			allUsers: true,
 			filtering: false,
 			rid,
 			members: [],
@@ -115,23 +113,11 @@ class RoomMembersView extends React.Component {
 		this.setState({ filtering: !!text, membersFiltered });
 	})
 
-	onPressUser = async(item) => {
-		try {
-			const db = database.active;
-			const subsCollection = db.collections.get('subscriptions');
-			const query = await subsCollection.query(Q.where('name', item.username)).fetch();
-			if (query.length) {
-				const [room] = query;
-				this.goRoom({ rid: room.rid, name: item.username, room });
-			} else {
-				const result = await RocketChat.createDirectMessage(item.username);
-				if (result.success) {
-					this.goRoom({ rid: result.room._id, name: item.username });
-				}
-			}
-		} catch (e) {
-			log(e);
-		}
+	onPressUser = (item) => {
+		const { navigation } = this.props;
+		navigation.navigate('RoomInfoView', {
+			rid: item._id, name: item.username, t: 'd'
+		});
 	}
 
 	onLongPressUser = (user) => {
@@ -199,14 +185,6 @@ class RoomMembersView extends React.Component {
 			log(e);
 			this.setState({ isLoading: false });
 		}
-	}
-
-	goRoom = async({ rid, name, room }) => {
-		const { navigation } = this.props;
-		await navigation.popToTop();
-		navigation.navigate('RoomView', {
-			rid, name, t: 'd', room
-		});
 	}
 
 	handleMute = async() => {

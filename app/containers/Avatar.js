@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { View } from 'react-native';
 import FastImage from 'react-native-fast-image';
+import Touchable from 'react-native-platform-touchable';
 import { settings as RocketChatSettings } from '@rocket.chat/sdk';
-import Touch from '../utils/touch';
-import { avatarURL } from '../utils/avatar';
 
-const Avatar = React.memo(({
-	text, size, baseUrl, borderRadius, style, avatar, type, children, userId, token, onPress, theme
+import { avatarURL } from '../utils/avatar';
+import Emoji from './markdown/Emoji';
+
+const Avatar = ({
+	text, size, baseUrl, borderRadius, style, avatar, type, children, userId, token, onPress, theme, emoji, getCustomEmoji, forceReload
 }) => {
 	const avatarStyle = {
 		width: size,
@@ -15,30 +17,49 @@ const Avatar = React.memo(({
 		borderRadius
 	};
 
+	const [, setValue] = useState(0);
+
+	useEffect(() => {
+		setValue(value => value + 1);
+	}, [forceReload]);
+
 	if (!text && !avatar) {
 		return null;
 	}
 
-	const uri = avatarURL({
+	let uri = avatarURL({
 		type, text, size, userId, token, avatar, baseUrl
 	});
 
-	let image = (
+	if (forceReload) {
+		uri += `&tc=${ forceReload }`;
+	}
+
+	let image = emoji ? (
+		<Emoji
+			theme={theme}
+			baseUrl={baseUrl}
+			getCustomEmoji={getCustomEmoji}
+			isMessageContainsOnlyEmoji
+			literal={emoji}
+		/>
+	) : (
 		<FastImage
 			style={avatarStyle}
 			source={{
 				uri,
 				headers: RocketChatSettings.customHeaders,
-				priority: FastImage.priority.high
+				priority: FastImage.priority.high,
+				cache: FastImage.cacheControl.web
 			}}
 		/>
 	);
 
 	if (onPress) {
 		image = (
-			<Touch onPress={onPress} theme={theme}>
+			<Touchable onPress={onPress}>
 				{image}
-			</Touch>
+			</Touchable>
 		);
 	}
 
@@ -48,13 +69,14 @@ const Avatar = React.memo(({
 			{children}
 		</View>
 	);
-});
+};
 
 Avatar.propTypes = {
 	baseUrl: PropTypes.string.isRequired,
 	style: PropTypes.any,
 	text: PropTypes.string,
 	avatar: PropTypes.string,
+	emoji: PropTypes.string,
 	size: PropTypes.number,
 	borderRadius: PropTypes.number,
 	type: PropTypes.string,
@@ -62,7 +84,8 @@ Avatar.propTypes = {
 	userId: PropTypes.string,
 	token: PropTypes.string,
 	theme: PropTypes.string,
-	onPress: PropTypes.func
+	onPress: PropTypes.func,
+	getCustomEmoji: PropTypes.func
 };
 
 Avatar.defaultProps = {

@@ -59,7 +59,7 @@ class Sidebar extends Component {
 		this.setIsAdmin();
 	}
 
-	componentWillReceiveProps(nextProps) {
+	UNSAFE_componentWillReceiveProps(nextProps) {
 		const { loadingServer } = this.props;
 		if (loadingServer && nextProps.loadingServer !== loadingServer) {
 			this.setIsAdmin();
@@ -166,6 +166,13 @@ class Sidebar extends Component {
 					current={activeItemKey === 'ChatsStack'}
 				/>
 				<SidebarItem
+					text={I18n.t('Channel_Directory')}
+					left={<CustomIcon name='hashtag' size={20} color={themes[theme].titleText} />}
+					onPress={() => this.sidebarNavigate('DirectoryView')}
+					testID='sidebar-channels'
+					current={activeItemKey === 'ChannelDirectoryStack'}
+				/>
+				<SidebarItem
 					text={I18n.t('Community_Profile')}
 					left={<CustomIcon name='discover' size={20} color={themes[theme].titleText} />}
 					onPress={this.onPressCommunityProfile}
@@ -231,6 +238,9 @@ class Sidebar extends Component {
 			user, Site_Name, baseUrl, useRealName, allowStatusMessage, split, theme
 		} = this.props;
 
+		const date = new Date();
+		const timestamp = date.getTime();
+
 		if (!user) {
 			return null;
 		}
@@ -255,12 +265,18 @@ class Sidebar extends Component {
 							baseUrl={baseUrl}
 							userId={user.id}
 							token={user.token}
+							forceReload={timestamp}
 						/>
 						<View style={styles.headerTextContainer}>
 							<View style={styles.headerUsername}>
 								<Text numberOfLines={1} style={[styles.username, { color: themes[theme].titleText }]}>{useRealName ? user.name : user.username}</Text>
 							</View>
-							<Text style={[styles.currentServerText, { color: themes[theme].titleText }]} numberOfLines={1}>{Site_Name}</Text>
+							<Text
+								style={[styles.currentServerText, { color: themes[theme].titleText }]}
+								numberOfLines={1}
+								accessibilityLabel={`Connected to ${ baseUrl }`}
+							>{Site_Name}
+							</Text>
 						</View>
 					</View>
 

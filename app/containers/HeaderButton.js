@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { HeaderButtons, HeaderButton, Item } from 'react-navigation-header-buttons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import { CustomIcon } from '../lib/Icons';
 import { isIOS, isAndroid } from '../utils/deviceInfo';
@@ -30,10 +31,30 @@ export const CustomHeaderButtons = React.memo(props => (
 	/>
 ));
 
+const CustomHeaderButtonMaterial = React.memo(withTheme(({ theme, ...props }) => (
+	<HeaderButton
+		{...props}
+		IconComponent={MaterialIcons}
+		iconSize={headerIconSize}
+		color={
+			isAndroid
+				? themes[theme].headerTitleColor
+				: themes[theme].headerTintColor
+		}
+	/>
+)));
+
+export const CustomHeaderButtonsMaterial = React.memo(props => (
+	<HeaderButtons
+		HeaderButtonComponent={CustomHeaderButtonMaterial}
+		{...props}
+	/>
+));
+
 export const DrawerButton = React.memo(({ navigation, testID, ...otherProps }) => (
-	<CustomHeaderButtons left>
-		<Item title='drawer' iconName='customize' onPress={navigation.toggleDrawer} testID={testID} {...otherProps} />
-	</CustomHeaderButtons>
+	<CustomHeaderButtonsMaterial left>
+		<Item title='drawer' iconName='menu' onPress={navigation.toggleDrawer} testID={testID} {...otherProps} />
+	</CustomHeaderButtonsMaterial>
 ));
 
 export const CloseModalButton = React.memo(({ navigation, testID, onPress = () => navigation.pop() }) => (

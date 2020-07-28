@@ -40,5 +40,18 @@ export default StyleSheet.create({
 		fontSize: 14,
 		paddingLeft: 10,
 		...sharedStyles.textRegular
+	},
+	directoryItemLabelMembers: {
+		fontSize: 14,
+		paddingRight: 8,
+		paddingLeft: 8,
+		...sharedStyles.textRegular
+	},
+	directoryItemMembersButton: {
+		fontSize: 21,
+		display: 'flex',
+		flexDirection: 'row',
+		alignItems: 'center',
+		...sharedStyles.textMedium
 	}
 });
