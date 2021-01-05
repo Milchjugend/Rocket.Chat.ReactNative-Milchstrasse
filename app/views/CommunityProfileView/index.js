@@ -7,12 +7,12 @@ import { connect } from 'react-redux';
 
 import BrowserView from '../../containers/BrowserView';
 import { toggleCrashReport as toggleCrashReportAction } from '../../actions/crashReport';
-import { CloseModalButton, DrawerButton } from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
 import styles from './styles';
 
 import I18n from '../../i18n';
 import { withTheme } from '../../theme';
+import * as HeaderButton from '../../containers/HeaderButton';
 
 const ItemInfo = React.memo(({ info }) => (
 	<View style={styles.infoContainer}>
@@ -24,14 +24,17 @@ ItemInfo.propTypes = {
 };
 
 class CommunityProfileView extends React.Component {
-	static navigationOptions = ({ navigation, isMasterDetail }) => ({
-		headerLeft: () => (isMasterDetail ? (
-			<CloseModalButton navigation={navigation} testID='settings-view-close' />
-		) : (
-			<DrawerButton navigation={navigation} />
-		)),
-		title: I18n.t('Community_Profile')
-	});
+	static navigationOptions = ({ navigation, isMasterDetail }) => {
+		const options = {
+			title: I18n.t('Community_Profile')
+		};
+		if (isMasterDetail) {
+			options.headerLeft = () => <HeaderButton.CloseModal navigation={navigation} testID='directory-view-close' />;
+		} else {
+			options.headerLeft = () => <HeaderButton.Drawer navigation={navigation} testID='directory-view-close' />;
+		}
+		return options;
+	}
 
 	static propTypes = {
 		theme: PropTypes.string

@@ -191,7 +191,7 @@ class Sidebar extends Component {
 				/>
 				<SidebarItem
 					text={I18n.t('Channel_Directory')}
-					left={<CustomIcon name='hash' size={20} color={themes[theme].titleText} />}
+					left={<CustomIcon name='channel-public' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('DirectoryView')}
 					testID='sidebar-channels'
 					current={this.currentItemKey === 'ChannelDirectoryStack'}

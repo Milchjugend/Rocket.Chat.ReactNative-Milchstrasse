@@ -13,6 +13,8 @@ import ServerAvatar from './ServerAvatar';
 import { getShowLoginButton } from '../../selectors/login';
 
 class WorkspaceView extends React.Component {
+
+
 	static navigationOptions = () => ({
 		title: I18n.t('Your_workspace')
 	})
@@ -65,7 +67,6 @@ class WorkspaceView extends React.Component {
 		const {
 			theme, Site_Name, Site_Url, Assets_favicon_512, server, showLoginButton
 		} = this.props;
-
 		return (
 			<FormContainer theme={theme} testID='workspace-view'>
 				<FormContainerInner>
