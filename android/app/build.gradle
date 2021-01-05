@@ -88,7 +88,7 @@ import com.android.build.OutputFile
 
 project.ext.react = [
     bundleAssetName: "app.bundle",
-    iconFontNames: [ 'MaterialIcons.ttf', 'custom.ttf' ],
+    iconFontNames: [ 'custom.ttf' ],
     enableHermes: true,  // clean and rebuild if changing
 ]
 

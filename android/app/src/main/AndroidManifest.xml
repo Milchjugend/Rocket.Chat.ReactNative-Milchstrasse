@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="ch.milchjugend.milchstrasse">
+    package="chat.rocket.reactnative">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -25,7 +25,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="ch.milchjugend.milchstrasse.MainActivity"
+            android:name="chat.rocket.reactnative.MainActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
             android:exported="true"
             android:label="@string/app_name"
@@ -59,7 +59,7 @@
         </activity>
         <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" />
         <activity
-            android:name="ch.milchjugend.milchstrasse.share.ShareActivity"
+            android:name="chat.rocket.reactnative.share.ShareActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:label="@string/share_extension_name"
             android:noHistory="true"

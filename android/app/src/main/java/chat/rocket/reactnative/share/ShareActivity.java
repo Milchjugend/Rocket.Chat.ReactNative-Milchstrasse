@@ -1,4 +1,4 @@
-package ch.milchjugend.milchstrasse.share;
+package chat.rocket.reactnative.share;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;

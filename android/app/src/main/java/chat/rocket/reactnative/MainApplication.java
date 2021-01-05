@@ -1,4 +1,4 @@
-package ch.milchjugend.milchstrasse;
+package chat.rocket.reactnative;
 
 import android.app.Application;
 
@@ -9,9 +9,6 @@ import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
-import java.lang.reflect.InvocationTargetException;
-
-import ch.milchjugend.milchstrasse.generated.BasePackageList;
 import com.nozbe.watermelondb.WatermelonDBPackage;
 import com.reactnativecommunity.viewpager.RNCViewPagerPackage;
 

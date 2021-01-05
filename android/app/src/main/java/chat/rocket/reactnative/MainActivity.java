@@ -1,4 +1,4 @@
-package ch.milchjugend.milchstrasse;
+package chat.rocket.reactnative;
 
 import android.os.Bundle;
 import android.content.Context;

@@ -1,6 +1,6 @@
-package ch.milchjugend.milchstrasse.share;
+package chat.rocket.reactnative.share;
 
-import ch.milchjugend.milchstrasse.BuildConfig;
+import chat.rocket.reactnative.BuildConfig;
 
 import chat.rocket.SharePackage;
 
