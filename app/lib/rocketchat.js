@@ -77,7 +77,7 @@ const RocketChat = {
 		name, users, type, readOnly, broadcast
 	}) {
 		// RC 0.51.0
-		return this.methodCall(type ? 'createPrivateGroup' : 'createChannel', name, users, readOnly, {}, { broadcast });
+		return this.methodCallWrapper(type ? 'createPrivateGroup' : 'createChannel', name, users, readOnly, {}, { broadcast });
 	},
 	async getUserToken() {
 		try {
@@ -288,6 +288,8 @@ const RocketChat = {
 		const serversDB = database.servers;
 		reduxStore.dispatch(shareSelectServer(server));
 
+		RocketChat.setCustomEmojis();
+
 		// set User info
 		try {
 			const userId = await RNUserDefaults.get(`${ RocketChat.TOKEN_KEY }-${ server }`);
@@ -318,18 +320,14 @@ const RocketChat = {
 		reduxStore.dispatch(shareSetUser({}));
 	},
 
-	updateJitsiTimeout(rid) {
-		return this.methodCall('jitsi:updateTimeout', rid);
+	updateJitsiTimeout(roomId) {
+		// RC 0.74.0
+		return this.post('video-conference/jitsi.update-timeout', { roomId });
 	},
 
 	register(credentials) {
 		// RC 0.50.0
 		return this.post('users.register', credentials, false);
-	},
-
-	setUsername(username) {
-		// RC 0.51.0
-		return this.methodCall('setUsername', username);
 	},
 
 	forgotPassword(email) {
@@ -346,6 +344,7 @@ const RocketChat = {
 				if (e.data?.error && (e.data.error === 'totp-required' || e.data.error === 'totp-invalid')) {
 					const { details } = e.data;
 					try {
+						reduxStore.dispatch(setUser({ username: params.user || params.username }));
 						const code = await twoFactor({ method: details?.method || 'totp', invalid: e.data.error === 'totp-invalid' });
 						return resolve(this.loginTOTP({ ...params, code: code?.twoFactorCode }));
 					} catch {
@@ -400,6 +399,7 @@ const RocketChat = {
 			status: result.me.status,
 			statusText: result.me.statusText,
 			customFields: result.me.customFields,
+			statusLivechat: result.me.statusLivechat,
 			emails: result.me.emails,
 			roles: result.me.roles
 		};
@@ -565,7 +565,7 @@ const RocketChat = {
 
 	spotlight(search, usernames, type) {
 		// RC 0.51.0
-		return this.methodCall('spotlight', search, usernames, type);
+		return this.methodCallWrapper('spotlight', search, usernames, type);
 	},
 
 	createDirectMessage(username) {
@@ -594,7 +594,7 @@ const RocketChat = {
 		// TODO: join code
 		// RC 0.48.0
 		if (type === 'p') {
-			return this.methodCall('joinRoom', roomId);
+			return this.methodCallWrapper('joinRoom', roomId);
 		}
 		return this.post('channels.join', { roomId });
 	},
@@ -703,9 +703,12 @@ const RocketChat = {
 	onStreamData(...args) {
 		return this.sdk.onStreamData(...args);
 	},
-	emitTyping(room, t = true) {
-		const { login } = reduxStore.getState();
-		return this.methodCall('stream-notify-room', `${ room }/typing`, login.user.username, t);
+	emitTyping(room, typing = true) {
+		const { login, settings } = reduxStore.getState();
+		const { UI_Use_Real_Name } = settings;
+		const { user } = login;
+		const name = UI_Use_Real_Name ? user.name : user.username;
+		return this.methodCall('stream-notify-room', `${ room }/typing`, name, typing);
 	},
 	setUserPresenceAway() {
 		return this.methodCall('UserPresence:away');
@@ -733,11 +736,22 @@ const RocketChat = {
 	},
 	getRoomMembers(rid, allUsers, skip = 0, limit = 10) {
 		// RC 0.42.0
-		return this.methodCall('getUsersOfRoom', rid, allUsers, { skip, limit });
+		return this.methodCallWrapper('getUsersOfRoom', rid, allUsers, { skip, limit });
 	},
+
+	async methodCallWrapper(method, ...params) {
+		const { API_Use_REST_For_DDP_Calls } = reduxStore.getState().settings;
+		if (API_Use_REST_For_DDP_Calls) {
+			const data = await this.post(`method.call/${ method }`, { message: JSON.stringify({ method, params }) });
+			const { result } = JSON.parse(data.message);
+			return result;
+		}
+		return this.methodCall(method, ...params);
+	},
+
 	getUserRoles() {
 		// RC 0.27.0
-		return this.methodCall('getUserRoles');
+		return this.methodCallWrapper('getUserRoles');
 	},
 	getRoomCounters(roomId, t) {
 		// RC 0.65.0
@@ -762,19 +776,19 @@ const RocketChat = {
 	},
 	closeLivechat(rid, comment) {
 		// RC 0.29.0
-		return this.methodCall('livechat:closeRoom', rid, comment, { clientAction: true });
+		return this.methodCallWrapper('livechat:closeRoom', rid, comment, { clientAction: true });
 	},
 	editLivechat(userData, roomData) {
 		// RC 0.55.0
-		return this.methodCall('livechat:saveInfo', userData, roomData);
+		return this.methodCallWrapper('livechat:saveInfo', userData, roomData);
 	},
 	returnLivechat(rid) {
 		// RC 0.72.0
-		return this.methodCall('livechat:returnAsInquiry', rid);
+		return this.methodCallWrapper('livechat:returnAsInquiry', rid);
 	},
 	forwardLivechat(transferData) {
 		// RC 0.36.0
-		return this.methodCall('livechat:transfer', transferData);
+		return this.methodCallWrapper('livechat:transfer', transferData);
 	},
 	getPagesLivechat(rid, offset) {
 		// RC 2.3.0
@@ -794,11 +808,11 @@ const RocketChat = {
 	},
 	getRoutingConfig() {
 		// RC 2.0.0
-		return this.methodCall('livechat:getRoutingConfig');
+		return this.methodCallWrapper('livechat:getRoutingConfig');
 	},
 	getTagsList() {
 		// RC 2.0.0
-		return this.methodCall('livechat:getTagsList');
+		return this.methodCallWrapper('livechat:getTagsList');
 	},
 	getAgentDepartments(uid) {
 		// RC 2.4.0
@@ -807,6 +821,10 @@ const RocketChat = {
 	getCustomFields() {
 		// RC 2.2.0
 		return this.sdk.get('livechat/custom-fields');
+	},
+	changeLivechatStatus() {
+		// RC 0.26.0
+		return this.methodCallWrapper('livechat:changeLivechatStatus');
 	},
 
 	getUidDirectMessage(room) {
@@ -834,10 +852,10 @@ const RocketChat = {
 	toggleBlockUser(rid, blocked, block) {
 		if (block) {
 			// RC 0.49.0
-			return this.methodCall('blockUser', { rid, blocked });
+			return this.methodCallWrapper('blockUser', { rid, blocked });
 		}
 		// RC 0.49.0
-		return this.methodCall('unblockUser', { rid, blocked });
+		return this.methodCallWrapper('unblockUser', { rid, blocked });
 	},
 	leaveRoom(roomId, t) {
 		// RC 0.48.0
@@ -850,10 +868,10 @@ const RocketChat = {
 	toggleMuteUserInRoom(rid, username, mute) {
 		if (mute) {
 			// RC 0.51.0
-			return this.methodCall('muteUserInRoom', { rid, username });
+			return this.methodCallWrapper('muteUserInRoom', { rid, username });
 		}
 		// RC 0.51.0
-		return this.methodCall('unmuteUserInRoom', { rid, username });
+		return this.methodCallWrapper('unmuteUserInRoom', { rid, username });
 	},
 	toggleArchiveRoom(roomId, t, archive) {
 		if (archive) {
@@ -868,7 +886,7 @@ const RocketChat = {
 	},
 	saveRoomSettings(rid, params) {
 		// RC 0.55.0
-		return this.methodCall('saveRoomSettings', rid, params);
+		return this.methodCallWrapper('saveRoomSettings', rid, params);
 	},
 	post(...args) {
 		return new Promise(async(resolve, reject) => {
@@ -921,9 +939,9 @@ const RocketChat = {
 		// RC 0.62.2
 		return this.post('users.updateOwnBasicInfo', { data, customFields });
 	},
-	saveUserPreferences(params) {
-		// RC 0.51.0
-		return this.methodCall('saveUserPreferences', params);
+	saveUserPreferences(data) {
+		// RC 0.62.0
+		return this.post('users.setPreferences', { data });
 	},
 	saveNotificationSettings(roomId, notifications) {
 		// RC 0.63.0
@@ -933,11 +951,11 @@ const RocketChat = {
 		let { users } = reduxStore.getState().selectedUsers;
 		users = users.map(u => u.name);
 		// RC 0.51.0
-		return this.methodCall('addUsersToRoom', { rid, users });
+		return this.methodCallWrapper('addUsersToRoom', { rid, users });
 	},
 	getSingleMessage(msgId) {
-		// RC 0.57.0
-		return this.methodCall('getSingleMessage', msgId);
+		// RC 0.47.0
+		return this.sdk.get('chat.getMessage', { msgId });
 	},
 	async hasPermission(permissions, rid) {
 		const db = database.active;
@@ -982,7 +1000,7 @@ const RocketChat = {
 	},
 	getAvatarSuggestion() {
 		// RC 0.51.0
-		return this.methodCall('getAvatarSuggestion');
+		return this.methodCallWrapper('getAvatarSuggestion');
 	},
 	resetAvatar(userId) {
 		// RC 0.55.0
@@ -990,7 +1008,7 @@ const RocketChat = {
 	},
 	setAvatarFromService({ data, contentType = '', service = null }) {
 		// RC 0.51.0
-		return this.methodCall('setAvatarFromService', data, contentType, service);
+		return this.methodCallWrapper('setAvatarFromService', data, contentType, service);
 	},
 	async getAllowCrashReport() {
 		const allowCrashReport = await AsyncStorage.getItem(CRASH_REPORT_KEY);
@@ -1059,6 +1077,10 @@ const RocketChat = {
 			return 'cas';
 		}
 
+		if (authName === 'apple' && isIOS) {
+			return 'apple';
+		}
+
 		// TODO: remove this after other oauth providers are implemented. e.g. Drupal, github_enterprise
 		const availableOAuth = ['facebook', 'github', 'gitlab', 'google', 'linkedin', 'meteor-developer', 'twitter', 'wordpress'];
 		return availableOAuth.includes(authName) ? 'oauth' : 'not_supported';
@@ -1124,6 +1146,14 @@ const RocketChat = {
 		return this.sdk.get('chat.syncThreadsList', {
 			rid, updatedSince
 		});
+	},
+	readThreads(tmid) {
+		const serverVersion = reduxStore.getState().server.version;
+		if (serverVersion && semver.gte(semver.coerce(serverVersion), '3.4.0')) {
+			// RC 3.4.0
+			return this.methodCallWrapper('readThreads', tmid);
+		}
+		return Promise.resolve();
 	},
 	runSlashCommand(command, roomId, params, triggerId, tmid) {
 		// RC 0.60.2
@@ -1202,13 +1232,13 @@ const RocketChat = {
 	saveAutoTranslate({
 		rid, field, value, options
 	}) {
-		return this.methodCall('autoTranslate.saveSettings', rid, field, value, options);
+		return this.methodCallWrapper('autoTranslate.saveSettings', rid, field, value, options);
 	},
 	getSupportedLanguagesAutoTranslate() {
-		return this.methodCall('autoTranslate.getSupportedLanguages', 'en');
+		return this.methodCallWrapper('autoTranslate.getSupportedLanguages', 'en');
 	},
 	translateMessage(message, targetLanguage) {
-		return this.methodCall('autoTranslate.translateMessage', message, targetLanguage);
+		return this.methodCallWrapper('autoTranslate.translateMessage', message, targetLanguage);
 	},
 	getRoomTitle(room) {
 		const { UI_Use_Real_Name: useRealName, UI_Allow_room_names_with_special_chars: allowSpecialChars } = reduxStore.getState().settings;

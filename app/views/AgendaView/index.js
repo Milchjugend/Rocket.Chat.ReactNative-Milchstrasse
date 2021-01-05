@@ -5,15 +5,14 @@ import {
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
-import { HeaderBackButton } from 'react-navigation-stack';
 import BrowserView from '../../containers/BrowserView';
 import { toggleCrashReport as toggleCrashReportAction } from '../../actions/crashReport';
-import { DrawerButton } from '../../containers/HeaderButton';
+import { CloseModalButton, DrawerButton } from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
 import styles from './styles';
-import { themedHeader } from '../../utils/navigation';
-import { themes } from '../../constants/colors';
+
 import I18n from '../../i18n';
+import { withTheme } from '../../theme';
 
 const ItemInfo = React.memo(({ info }) => (
 	<View style={styles.infoContainer}>
@@ -25,24 +24,24 @@ ItemInfo.propTypes = {
 };
 
 class AgendaView extends React.Component {
-	static navigationOptions = ({ navigation, screenProps }) => ({
-		...themedHeader(screenProps.theme),
-		headerLeft: screenProps.split ? (
-			<HeaderBackButton
-				onPress={() => navigation.navigate('SettingsView')}
-				tintColor={themes[screenProps.theme].headerTintColor}
-			/>
+	static navigationOptions = ({ navigation, isMasterDetail }) => ({
+		headerLeft: () => (isMasterDetail ? (
+			<CloseModalButton navigation={navigation} testID='settings-view-close' />
 		) : (
 			<DrawerButton navigation={navigation} />
-		),
+		)),
 		title: I18n.t('Agenda')
-	})
+	});
 
+	static propTypes = {
+		theme: PropTypes.string
+	}
 
 	render() {
+		const { theme } = this.props;
 		return (
-			<SafeAreaView style={styles.container} testID='settings-view'>
-				<StatusBar />
+			<SafeAreaView theme={theme} style={styles.container} testID='settings-view'>
+				<StatusBar theme={theme} />
 				<BrowserView url='https://app.milchjugend.ch/events' />
 			</SafeAreaView>
 		);
@@ -51,11 +50,12 @@ class AgendaView extends React.Component {
 
 const mapStateToProps = state => ({
 	server: state.server,
-	allowCrashReport: state.crashReport.allowCrashReport
+	allowCrashReport: state.crashReport.allowCrashReport,
+	isMasterDetail: state.app.isMasterDetail
 });
 
 const mapDispatchToProps = dispatch => ({
 	toggleCrashReport: params => dispatch(toggleCrashReportAction(params))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(AgendaView);
+export default connect(mapStateToProps, mapDispatchToProps)(withTheme(AgendaView));

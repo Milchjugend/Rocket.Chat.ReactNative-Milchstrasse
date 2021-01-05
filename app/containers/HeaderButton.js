@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { HeaderButtons, HeaderButton, Item } from 'react-navigation-header-buttons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import { CustomIcon } from '../lib/Icons';
-import { isIOS, isAndroid } from '../utils/deviceInfo';
+import { isIOS } from '../utils/deviceInfo';
 import { themes } from '../constants/colors';
 import I18n from '../i18n';
 import { withTheme } from '../theme';
@@ -16,11 +15,7 @@ const CustomHeaderButton = React.memo(withTheme(({ theme, ...props }) => (
 		{...props}
 		IconComponent={CustomIcon}
 		iconSize={headerIconSize}
-		color={
-			isAndroid
-				? themes[theme].headerTitleColor
-				: themes[theme].headerTintColor
-		}
+		color={themes[theme].headerTintColor}
 	/>
 )));
 
@@ -31,35 +26,17 @@ export const CustomHeaderButtons = React.memo(props => (
 	/>
 ));
 
-const CustomHeaderButtonMaterial = React.memo(withTheme(({ theme, ...props }) => (
-	<HeaderButton
-		{...props}
-		IconComponent={MaterialIcons}
-		iconSize={headerIconSize}
-		color={
-			isAndroid
-				? themes[theme].headerTitleColor
-				: themes[theme].headerTintColor
-		}
-	/>
-)));
-
-export const CustomHeaderButtonsMaterial = React.memo(props => (
-	<HeaderButtons
-		HeaderButtonComponent={CustomHeaderButtonMaterial}
-		{...props}
-	/>
-));
-
 export const DrawerButton = React.memo(({ navigation, testID, ...otherProps }) => (
-	<CustomHeaderButtonsMaterial left>
-		<Item title='drawer' iconName='menu' onPress={navigation.toggleDrawer} testID={testID} {...otherProps} />
-	</CustomHeaderButtonsMaterial>
+	<CustomHeaderButtons left>
+		<Item title='drawer' iconName='menu_hamburguer' onPress={navigation.toggleDrawer} testID={testID} {...otherProps} />
+	</CustomHeaderButtons>
 ));
 
-export const CloseModalButton = React.memo(({ navigation, testID, onPress = () => navigation.pop() }) => (
+export const CloseModalButton = React.memo(({
+	navigation, testID, onPress = () => navigation.pop(), ...props
+}) => (
 	<CustomHeaderButtons left>
-		<Item title='close' iconName='cross' onPress={onPress} testID={testID} />
+		<Item title='close' iconName='Cross' onPress={onPress} testID={testID} {...props} />
 	</CustomHeaderButtons>
 ));
 
@@ -67,7 +44,7 @@ export const CancelModalButton = React.memo(({ onPress, testID }) => (
 	<CustomHeaderButtons left>
 		{isIOS
 			? <Item title={I18n.t('Cancel')} onPress={onPress} testID={testID} />
-			: <Item title='close' iconName='cross' onPress={onPress} testID={testID} />
+			: <Item title='close' iconName='Cross' onPress={onPress} testID={testID} />
 		}
 	</CustomHeaderButtons>
 ));
@@ -78,9 +55,9 @@ export const MoreButton = React.memo(({ onPress, testID }) => (
 	</CustomHeaderButtons>
 ));
 
-export const SaveButton = React.memo(({ onPress, testID }) => (
+export const SaveButton = React.memo(({ onPress, testID, ...props }) => (
 	<CustomHeaderButtons>
-		<Item title='save' iconName='Download' onPress={onPress} testID={testID} />
+		<Item title='save' iconName='download' onPress={onPress} testID={testID} {...props} />
 	</CustomHeaderButtons>
 ));
 

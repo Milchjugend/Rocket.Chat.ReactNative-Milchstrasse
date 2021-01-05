@@ -10,6 +10,8 @@ import { toggleCrashReport as toggleCrashReportAction } from '../../actions/cras
 import StatusBar from '../../containers/StatusBar';
 import BrowserView from '../../containers/BrowserView';
 
+import { withTheme } from '../../theme';
+
 import styles from './styles';
 
 const ItemInfo = React.memo(({ info }) => (
@@ -22,20 +24,21 @@ ItemInfo.propTypes = {
 };
 
 class WebsiteView extends React.Component {
-	static navigationOptions = ({ navigation }) => ({
-		title: navigation.getParam('title', 'Milchstrasse')
+	static navigationOptions = ({ route }) => ({
+		title: route.params.title || 'Milchstrasse'
 	});
 
 	static propTypes = {
-		navigation: PropTypes.object
+		route: PropTypes.object,
+		theme: PropTypes.string
 	};
 
 	render() {
-		const { navigation } = this.props;
-		const url = navigation.getParam('url', '');
+		const { theme, route } = this.props;
+		const { url } = route.params;
 		return (
-			<SafeAreaView style={styles.container} testID='settings-view'>
-				<StatusBar />
+			<SafeAreaView theme={theme} style={styles.container} testID='settings-view'>
+				<StatusBar theme={theme} />
 				<BrowserView url={url} />
 			</SafeAreaView>
 		);
@@ -51,4 +54,4 @@ const mapDispatchToProps = dispatch => ({
 	toggleCrashReport: params => dispatch(toggleCrashReportAction(params))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(WebsiteView);
+export default connect(mapStateToProps, mapDispatchToProps)(withTheme(WebsiteView));

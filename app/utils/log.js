@@ -10,6 +10,10 @@ export const logServerVersion = (serverVersion) => {
 	};
 };
 
+export const setCurrentScreen = (currentScreen) => {
+	analytics().setCurrentScreen(currentScreen);
+};
+
 export default (e) => {
 	console.log(e, metadata);
 };

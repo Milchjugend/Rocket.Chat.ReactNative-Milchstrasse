@@ -1,11 +1,11 @@
 const {
 	device, expect, element, by, waitFor
 } = require('detox');
-const { logout, navigateToLogin, login } = require('../../helpers/app');
 
 describe('Settings screen', () => {
 	before(async() => {
 		await device.launchApp({ newInstance: true });
+		await waitFor(element(by.id('rooms-list-view'))).toBeVisible().withTimeout(10000);
 		await expect(element(by.id('rooms-list-view'))).toBeVisible();
 		await element(by.id('rooms-list-view-sidebar')).tap();
 		await waitFor(element(by.id('sidebar-view'))).toBeVisible().withTimeout(2000);
