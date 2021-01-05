@@ -18,10 +18,6 @@ import { withActionSheet } from '../../containers/ActionSheet';
 import SafeAreaView from '../../containers/SafeAreaView';
 
 class MessagesView extends React.Component {
-	static navigationOptions = ({ route }) => ({
-		title: I18n.t(route.params?.name)
-	});
-
 	static propTypes = {
 		user: PropTypes.object,
 		baseUrl: PropTypes.string,
@@ -29,7 +25,8 @@ class MessagesView extends React.Component {
 		route: PropTypes.object,
 		customEmojis: PropTypes.object,
 		theme: PropTypes.string,
-		showActionSheet: PropTypes.func
+		showActionSheet: PropTypes.func,
+		useRealName: PropTypes.bool
 	}
 
 	constructor(props) {
@@ -39,6 +36,7 @@ class MessagesView extends React.Component {
 			messages: [],
 			fileLoading: true
 		};
+		this.setHeader();
 		this.rid = props.route.params?.rid;
 		this.t = props.route.params?.t;
 		this.content = this.defineMessagesViewContent(props.route.params?.name);
@@ -65,8 +63,14 @@ class MessagesView extends React.Component {
 		if (fileLoading !== nextState.fileLoading) {
 			return true;
 		}
-
 		return false;
+	}
+
+	setHeader = () => {
+		const { route, navigation } = this.props;
+		navigation.setOptions({
+			title: I18n.t(route.params?.name)
+		});
 	}
 
 	navToRoomInfo = (navParam) => {
@@ -78,19 +82,19 @@ class MessagesView extends React.Component {
 	}
 
 	defineMessagesViewContent = (name) => {
-		const { messages } = this.state;
-		const { user, baseUrl, theme } = this.props;
-
+		const {
+			user, baseUrl, theme, useRealName
+		} = this.props;
 		const renderItemCommonProps = item => ({
 			item,
 			baseUrl,
 			user,
 			author: item.u || item.user,
-			ts: item.ts || item.uploadedAt,
 			timeFormat: 'MMM Do YYYY, h:mm:ss a',
 			isEdited: !!item.editedAt,
 			isHeader: true,
 			attachments: item.attachments || [],
+			useRealName,
 			showAttachment: this.showAttachment,
 			getCustomEmoji: this.getCustomEmoji,
 			navToRoomInfo: this.navToRoomInfo
@@ -101,6 +105,7 @@ class MessagesView extends React.Component {
 			Files: {
 				name: I18n.t('Files'),
 				fetchFunc: async() => {
+					const { messages } = this.state;
 					const result = await RocketChat.getFiles(this.rid, this.t, messages.length);
 					return { ...result, messages: result.files };
 				},
@@ -112,6 +117,7 @@ class MessagesView extends React.Component {
 						item={{
 							...item,
 							u: item.user,
+							ts: item.ts || item.uploadedAt,
 							attachments: [{
 								title: item.name,
 								description: item.description,
@@ -125,12 +131,15 @@ class MessagesView extends React.Component {
 			// Mentions Messages Screen
 			Mentions: {
 				name: I18n.t('Mentions'),
-				fetchFunc: () => RocketChat.getMessages(
-					this.rid,
-					this.t,
-					{ 'mentions._id': { $in: [user.id] } },
-					messages.length
-				),
+				fetchFunc: () => {
+					const { messages } = this.state;
+					return RocketChat.getMessages(
+						this.rid,
+						this.t,
+						{ 'mentions._id': { $in: [user.id] } },
+						messages.length
+					);
+				},
 				noDataMsg: I18n.t('No_mentioned_messages'),
 				testID: 'mentioned-messages-view',
 				renderItem: item => (
@@ -144,12 +153,15 @@ class MessagesView extends React.Component {
 			// Starred Messages Screen
 			Starred: {
 				name: I18n.t('Starred'),
-				fetchFunc: () => RocketChat.getMessages(
-					this.rid,
-					this.t,
-					{ 'starred._id': { $in: [user.id] } },
-					messages.length
-				),
+				fetchFunc: () => {
+					const { messages } = this.state;
+					return RocketChat.getMessages(
+						this.rid,
+						this.t,
+						{ 'starred._id': { $in: [user.id] } },
+						messages.length
+					);
+				},
 				noDataMsg: I18n.t('No_starred_messages'),
 				testID: 'starred-messages-view',
 				renderItem: item => (
@@ -166,7 +178,10 @@ class MessagesView extends React.Component {
 			// Pinned Messages Screen
 			Pinned: {
 				name: I18n.t('Pinned'),
-				fetchFunc: () => RocketChat.getMessages(this.rid, this.t, { pinned: true }, messages.length),
+				fetchFunc: () => {
+					const { messages } = this.state;
+					return RocketChat.getMessages(this.rid, this.t, { pinned: true }, messages.length);
+				},
 				noDataMsg: I18n.t('No_pinned_messages'),
 				testID: 'pinned-messages-view',
 				renderItem: item => (
@@ -281,9 +296,8 @@ class MessagesView extends React.Component {
 			<SafeAreaView
 				style={{ backgroundColor: themes[theme].backgroundColor }}
 				testID={this.content.testID}
-				theme={theme}
 			>
-				<StatusBar theme={theme} />
+				<StatusBar />
 				<FlatList
 					data={messages}
 					renderItem={this.renderItem}
@@ -300,7 +314,8 @@ class MessagesView extends React.Component {
 const mapStateToProps = state => ({
 	baseUrl: state.server.server,
 	user: getUserSelector(state),
-	customEmojis: state.customEmojis
+	customEmojis: state.customEmojis,
+	useRealName: state.settings.UI_Use_Real_Name
 });
 
 export default connect(mapStateToProps)(withTheme(withActionSheet(MessagesView)));

@@ -2,6 +2,7 @@ import EJSON from 'ejson';
 
 import normalizeMessage from './normalizeMessage';
 import findSubscriptionsRooms from './findSubscriptionsRooms';
+import { Encryption } from '../../encryption';
 // TODO: delete and update
 
 export const merge = (subscription, room) => {
@@ -13,8 +14,10 @@ export const merge = (subscription, room) => {
 	}
 	if (room) {
 		if (room._updatedAt) {
-			subscription.roomUpdatedAt = room._updatedAt;
 			subscription.lastMessage = normalizeMessage(room.lastMessage);
+			const updatedAt = room?._updatedAt ? new Date(room._updatedAt) : null;
+			const lastMessageTs = subscription?.lastMessage?.ts ? new Date(subscription.lastMessage.ts) : null;
+			subscription.roomUpdatedAt = Math.max(updatedAt, lastMessageTs);
 			subscription.description = room.description;
 			subscription.topic = room.topic;
 			subscription.announcement = room.announcement;
@@ -27,8 +30,14 @@ export const merge = (subscription, room) => {
 		}
 		subscription.ro = room.ro;
 		subscription.broadcast = room.broadcast;
+		subscription.encrypted = room.encrypted;
+		subscription.e2eKeyId = room.e2eKeyId;
+		subscription.avatarETag = room.avatarETag;
 		if (!subscription.roles || !subscription.roles.length) {
 			subscription.roles = [];
+		}
+		if (!subscription.ignored?.length) {
+			subscription.ignored = [];
 		}
 		if (room.muted && room.muted.length) {
 			subscription.muted = room.muted.filter(muted => !!muted);
@@ -72,17 +81,23 @@ export default async(subscriptions = [], rooms = []) => {
 		rooms = rooms.update;
 	}
 
+	// Find missing rooms/subscriptions on local database
 	({ subscriptions, rooms } = await findSubscriptionsRooms(subscriptions, rooms));
+	// Merge each subscription into a room
+	subscriptions = subscriptions.map((s) => {
+		const index = rooms.findIndex(({ _id }) => _id === s.rid);
+		// Room not found
+		if (index < 0) {
+			return merge(s);
+		}
+		const [room] = rooms.splice(index, 1);
+		return merge(s, room);
+	});
+	// Decrypt all subscriptions missing decryption
+	subscriptions = await Encryption.decryptSubscriptions(subscriptions);
 
 	return {
-		subscriptions: subscriptions.map((s) => {
-			const index = rooms.findIndex(({ _id }) => _id === s.rid);
-			if (index < 0) {
-				return merge(s);
-			}
-			const [room] = rooms.splice(index, 1);
-			return merge(s, room);
-		}),
+		subscriptions,
 		rooms
 	};
 };

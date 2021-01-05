@@ -29,9 +29,9 @@ const styles = StyleSheet.create({
 });
 
 class SelectServerView extends React.Component {
-	static navigationOptions = {
+	static navigationOptions = () => ({
 		title: I18n.t('Select_Server')
-	}
+	})
 
 	static propTypes = {
 		server: PropTypes.string,
@@ -83,8 +83,8 @@ class SelectServerView extends React.Component {
 		const { servers } = this.state;
 		const { theme } = this.props;
 		return (
-			<SafeAreaView theme={theme}>
-				<StatusBar theme={theme} />
+			<SafeAreaView>
+				<StatusBar />
 				<View style={[styles.list, { borderColor: themes[theme].separatorColor }]}>
 					<FlatList
 						data={servers}
@@ -106,7 +106,7 @@ class SelectServerView extends React.Component {
 }
 
 const mapStateToProps = (({ share }) => ({
-	server: share.server
+	server: share.server.server
 }));
 
 export default connect(mapStateToProps)(withTheme(SelectServerView));

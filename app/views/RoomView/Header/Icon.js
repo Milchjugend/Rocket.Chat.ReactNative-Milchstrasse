@@ -21,9 +21,9 @@ const styles = StyleSheet.create({
 });
 
 const Icon = React.memo(({
-	roomUserId, type, status, theme
+	roomUserId, type, status, theme, tmid
 }) => {
-	if (type === 'd' && roomUserId) {
+	if ((type === 'd' || tmid) && roomUserId) {
 		return <Status size={10} style={styles.status} status={status} />;
 	}
 
@@ -36,17 +36,15 @@ const Icon = React.memo(({
 
 	let icon;
 	if (type === 'discussion') {
-		icon = 'chat';
-	} else if (type === 'thread') {
-		icon = 'threads';
+		icon = 'discussions';
 	} else if (type === 'c') {
-		icon = 'hash';
+		icon = 'channel-public';
 	} else if (type === 'l') {
-		icon = 'livechat';
+		icon = 'omnichannel';
 	} else if (type === 'd') {
 		icon = 'team';
 	} else {
-		icon = 'lock';
+		icon = 'channel-private';
 	}
 	return (
 		<CustomIcon
@@ -68,6 +66,7 @@ Icon.propTypes = {
 	roomUserId: PropTypes.string,
 	type: PropTypes.string,
 	status: PropTypes.string,
-	theme: PropTypes.string
+	theme: PropTypes.string,
+	tmid: PropTypes.string
 };
 export default Icon;

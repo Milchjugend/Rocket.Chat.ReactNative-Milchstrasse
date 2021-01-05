@@ -23,7 +23,11 @@ export default StyleSheet.create({
 	sortToggleText: {
 		fontSize: 16,
 		flex: 1,
-		marginLeft: 12,
+		...sharedStyles.textRegular
+	},
+	queueToggleText: {
+		fontSize: 16,
+		flex: 1,
 		...sharedStyles.textRegular
 	},
 	dropdownContainer: {
@@ -56,6 +60,9 @@ export default StyleSheet.create({
 	sortIcon: {
 		width: 22,
 		height: 22,
+		marginHorizontal: 12
+	},
+	queueIcon: {
 		marginHorizontal: 12
 	},
 	groupTitleContainer: {
@@ -117,14 +124,22 @@ export default StyleSheet.create({
 		height: StyleSheet.hairlineWidth,
 		marginLeft: 72
 	},
-	directoryIcon: {
-		width: 22,
-		height: 22,
-		marginHorizontal: 12
+	encryptionButton: {
+		width: '100%',
+		flexDirection: 'row',
+		alignItems: 'center',
+		padding: 12
 	},
-	directoryText: {
-		fontSize: 16,
+	encryptionIcon: {
+		...sharedStyles.textMedium
+	},
+	encryptionText: {
 		flex: 1,
-		...sharedStyles.textRegular
+		fontSize: 16,
+		marginHorizontal: 16,
+		...sharedStyles.textMedium
+	},
+	omnichannelToggle: {
+		marginRight: 12
 	}
 });

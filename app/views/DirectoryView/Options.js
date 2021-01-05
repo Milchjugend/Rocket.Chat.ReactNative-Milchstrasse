@@ -61,7 +61,7 @@ export default class DirectoryOptions extends PureComponent {
 		let icon = 'user';
 		if (itemType === 'channels') {
 			text = 'Channels';
-			icon = 'hash';
+			icon = 'channel-public';
 		}
 
 		return (
@@ -111,8 +111,8 @@ export default class DirectoryOptions extends PureComponent {
 								<View style={[styles.dropdownSeparator, { backgroundColor: themes[theme].separatorColor }]} />
 								<View style={[styles.dropdownItemContainer, styles.globalUsersContainer]}>
 									<View style={styles.globalUsersTextContainer}>
-										<Text style={styles.dropdownItemText}>{I18n.t('Search_global_users')}</Text>
-										<Text style={styles.dropdownItemDescription}>{I18n.t('Search_global_users_description')}</Text>
+										<Text style={[styles.dropdownItemText, { color: themes[theme].infoText }]}>{I18n.t('Search_global_users')}</Text>
+										<Text style={[styles.dropdownItemDescription, { color: themes[theme].infoText }]}>{I18n.t('Search_global_users_description')}</Text>
 									</View>
 									<Switch value={globalUsers} onValueChange={toggleWorkspace} trackColor={SWITCH_TRACK_COLOR} />
 								</View>

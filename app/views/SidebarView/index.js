@@ -5,10 +5,11 @@ import {
 } from 'react-native';
 import { connect } from 'react-redux';
 import { Q } from '@nozbe/watermelondb';
+import isEqual from 'react-fast-compare';
 
 import Avatar from '../../containers/Avatar';
 import Status from '../../containers/Status/Status';
-import log from '../../utils/log';
+import log, { logEvent, events } from '../../utils/log';
 import I18n from '../../i18n';
 import scrollPersistTaps from '../../utils/scrollPersistTaps';
 import { CustomIcon } from '../../lib/Icons';
@@ -18,8 +19,8 @@ import { themes } from '../../constants/colors';
 import database from '../../lib/database';
 import { withTheme } from '../../theme';
 import { getUserSelector } from '../../selectors/login';
-import Navigation from '../../lib/Navigation';
 import SafeAreaView from '../../containers/SafeAreaView';
+import Navigation from '../../lib/Navigation';
 
 const Separator = React.memo(({ theme }) => <View style={[styles.separator, { borderColor: themes[theme].separatorColor }]} />);
 Separator.propTypes = {
@@ -90,19 +91,8 @@ class Sidebar extends Component {
 		if (nextProps.theme !== theme) {
 			return true;
 		}
-		if (nextProps.user && user) {
-			if (nextProps.user.language !== user.language) {
-				return true;
-			}
-			if (nextProps.user.status !== user.status) {
-				return true;
-			}
-			if (nextProps.user.username !== user.username) {
-				return true;
-			}
-			if (nextProps.user.statusText !== user.statusText) {
-				return true;
-			}
+		if (!isEqual(nextProps.user, user)) {
+			return true;
 		}
 		if (nextProps.isMasterDetail !== isMasterDetail) {
 			return true;
@@ -150,8 +140,8 @@ class Sidebar extends Component {
 	}
 
 	sidebarNavigate = (route) => {
-		const { navigation } = this.props;
-		navigation.navigate(route);
+		logEvent(events[`SIDEBAR_GO_${ route.replace('StackNavigator', '').replace('View', '').toUpperCase() }`]);
+		Navigation.navigate(route);
 	}
 
 	get currentItemKey() {
@@ -179,8 +169,8 @@ class Sidebar extends Component {
 				<Separator theme={theme} />
 				<SidebarItem
 					text={I18n.t('Admin_Panel')}
-					left={<CustomIcon name='shield' size={20} color={themes[theme].titleText} />}
-					onPress={() => Navigation.navigate(routeName)}
+					left={<CustomIcon name='settings' size={20} color={themes[theme].titleText} />}
+					onPress={() => this.sidebarNavigate(routeName)}
 					testID='sidebar-settings'
 					current={this.currentItemKey === routeName}
 				/>
@@ -236,7 +226,7 @@ class Sidebar extends Component {
 				/>
 				<SidebarItem
 					text={I18n.t('Settings')}
-					left={<CustomIcon name='cog' size={20} color={themes[theme].titleText} />}
+					left={<CustomIcon name='administration' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('SettingsStackNavigator')}
 					testID='sidebar-settings'
 					current={this.currentItemKey === 'SettingsStackNavigator'}
@@ -253,7 +243,7 @@ class Sidebar extends Component {
 				text={user.statusText || I18n.t('Edit_Status')}
 				left={<Status style={styles.status} size={12} status={user && user.status} />}
 				right={<CustomIcon name='edit' size={20} color={themes[theme].titleText} />}
-				onPress={() => Navigation.navigate('StatusView')}
+				onPress={() => this.sidebarNavigate('StatusView')}
 				testID='sidebar-custom-status'
 			/>
 		);
@@ -264,14 +254,11 @@ class Sidebar extends Component {
 			user, Site_Name, baseUrl, useRealName, allowStatusMessage, isMasterDetail, theme
 		} = this.props;
 
-		const date = new Date();
-		const timestamp = date.getTime();
-
 		if (!user) {
 			return null;
 		}
 		return (
-			<SafeAreaView testID='sidebar-view' style={{ backgroundColor: themes[theme].focusedBackground }} vertical={isMasterDetail} theme={theme}>
+			<SafeAreaView testID='sidebar-view' style={{ backgroundColor: themes[theme].focusedBackground }} vertical={isMasterDetail}>
 				<ScrollView
 					style={[
 						styles.container,
@@ -287,12 +274,8 @@ class Sidebar extends Component {
 						<View style={styles.header} theme={theme}>
 							<Avatar
 								text={user.username}
-								size={30}
 								style={styles.avatar}
-								baseUrl={baseUrl}
-								userId={user.id}
-								token={user.token}
-								forceReload={timestamp}
+								size={30}
 							/>
 							<View style={styles.headerTextContainer}>
 								<View style={styles.headerUsername}>

@@ -8,24 +8,28 @@ import { connect } from 'react-redux';
 import Avatar from '../../containers/Avatar';
 import styles from './styles';
 import ActivityIndicator from '../../containers/ActivityIndicator';
+import * as HeaderButton from '../../containers/HeaderButton';
 import I18n from '../../i18n';
 import RocketChat from '../../lib/rocketchat';
 import StatusBar from '../../containers/StatusBar';
 import { withTheme } from '../../theme';
 import { themes } from '../../constants/colors';
-import { getUserSelector } from '../../selectors/login';
 import SafeAreaView from '../../containers/SafeAreaView';
 
 class ReadReceiptView extends React.Component {
-	static navigationOptions = {
-		title: I18n.t('Read_Receipt')
+	static navigationOptions = ({ navigation, isMasterDetail }) => {
+		const options = {
+			title: I18n.t('Read_Receipt')
+		};
+		if (isMasterDetail) {
+			options.headerLeft = () => <HeaderButton.CloseModal navigation={navigation} testID='read-receipt-view-close' />;
+		}
+		return options;
 	}
 
 	static propTypes = {
 		route: PropTypes.object,
 		Message_TimeFormat: PropTypes.string,
-		baseUrl: PropTypes.string,
-		user: PropTypes.object,
 		theme: PropTypes.string
 	}
 
@@ -89,23 +93,21 @@ class ReadReceiptView extends React.Component {
 	}
 
 	renderItem = ({ item }) => {
-		const {
-			Message_TimeFormat, user: { id: userId, token }, baseUrl, theme
-		} = this.props;
+		const { Message_TimeFormat, theme } = this.props;
 		const time = moment(item.ts).format(Message_TimeFormat);
+		if (!item?.user?.username) {
+			return null;
+		}
 		return (
 			<View style={[styles.itemContainer, { backgroundColor: themes[theme].backgroundColor }]}>
 				<Avatar
 					text={item.user.username}
 					size={40}
-					baseUrl={baseUrl}
-					userId={userId}
-					token={token}
 				/>
 				<View style={styles.infoContainer}>
 					<View style={styles.item}>
 						<Text style={[styles.name, { color: themes[theme].titleText }]}>
-							{item.user.name}
+							{item?.user?.name}
 						</Text>
 						<Text style={{ color: themes[theme].auxiliaryText }}>
 							{time}
@@ -133,36 +135,32 @@ class ReadReceiptView extends React.Component {
 		}
 
 		return (
-			<SafeAreaView testID='read-receipt-view' theme={theme}>
-				<StatusBar theme={theme} />
-				<View>
-					{loading
-						? <ActivityIndicator theme={theme} />
-						: (
-							<FlatList
-								data={receipts}
-								renderItem={this.renderItem}
-								ItemSeparatorComponent={this.renderSeparator}
-								style={[
-									styles.list,
-									{
-										backgroundColor: themes[theme].chatComponentBackground,
-										borderColor: themes[theme].separatorColor
-									}
-								]}
-								keyExtractor={item => item._id}
-							/>
-						)}
-				</View>
+			<SafeAreaView testID='read-receipt-view'>
+				<StatusBar />
+				{loading
+					? <ActivityIndicator theme={theme} />
+					: (
+						<FlatList
+							data={receipts}
+							renderItem={this.renderItem}
+							ItemSeparatorComponent={this.renderSeparator}
+							style={[
+								styles.list,
+								{
+									backgroundColor: themes[theme].chatComponentBackground,
+									borderColor: themes[theme].separatorColor
+								}
+							]}
+							keyExtractor={item => item._id}
+						/>
+					)}
 			</SafeAreaView>
 		);
 	}
 }
 
 const mapStateToProps = state => ({
-	Message_TimeFormat: state.settings.Message_TimeFormat,
-	baseUrl: state.server.server,
-	user: getUserSelector(state)
+	Message_TimeFormat: state.settings.Message_TimeFormat
 });
 
 export default connect(mapStateToProps)(withTheme(ReadReceiptView));

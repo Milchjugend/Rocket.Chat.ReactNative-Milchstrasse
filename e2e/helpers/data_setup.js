@@ -38,19 +38,68 @@ const createUser = async (username, password, name, email) => {
 }
 
 const createChannelIfNotExists = async (channelname) => {
-    console.log(`Creating channel ${channelname}`)
+    console.log(`Creating public channel ${channelname}`)
     try {
-        await rocketchat.post('channels.create', {
+        const room = await rocketchat.post('channels.create', {
             "name": channelname
         })
+        return room
     } catch (createError) {
         try { //Maybe it exists already?
-            await rocketchat.get(`channels.info?roomName=${channelname}`)
+            const room = rocketchat.get(`channels.info?roomName=${channelname}`)
+            return room
         } catch (infoError) {
             console.log(JSON.stringify(createError))
             console.log(JSON.stringify(infoError))
-            throw "Failed to find or create channel"
+            throw "Failed to find or create public channel"
         }
+    }
+}
+
+const createGroupIfNotExists = async (groupname) => {
+    console.log(`Creating private group ${groupname}`)
+    try {
+        await rocketchat.post('groups.create', {
+            "name": groupname
+        })
+    } catch (createError) {
+        try { //Maybe it exists already?
+            await rocketchat.get(`groups.info?roomName=${groupname}`)
+        } catch (infoError) {
+            console.log(JSON.stringify(createError))
+            console.log(JSON.stringify(infoError))
+            throw "Failed to find or create private group"
+        }
+    }
+}
+
+const changeChannelJoinCode = async (roomId, joinCode) => {
+    console.log(`Changing channel Join Code ${roomId}`)
+    try {
+        await rocketchat.post('method.call/saveRoomSettings', {
+            message: JSON.stringify({
+                method: 'saveRoomSettings',
+                params: [
+                    roomId,
+                    { joinCode }
+                ]
+            })
+        })
+    } catch (createError) {
+        console.log(JSON.stringify(createError))
+        throw "Failed to create protected channel"
+    }
+}
+
+const sendMessage = async (user, groupname, msg) => {
+    console.log(`Sending message to ${groupname}`)
+    try {
+        await login(user.username, user.password);
+        await rocketchat.post('chat.postMessage', { channel: `#${groupname}`, msg });
+    } catch (infoError) {
+        console.log(JSON.stringify(createError))
+        console.log(JSON.stringify(infoError))
+        throw "Failed to find or create private group"
     }
 }
 
@@ -67,11 +116,26 @@ const setup = async () => {
     for (var channelKey in data.channels) {
         if (data.channels.hasOwnProperty(channelKey)) {
             const channel = data.channels[channelKey]
-            await createChannelIfNotExists(channel.name)
+            const { data: { channel: { _id } } } = await createChannelIfNotExists(channel.name)
+
+            if (channel.joinCode) {
+                await changeChannelJoinCode(_id, channel.joinCode);
+            }
+        }
+    }
+
+    await login(data.users.regular.username, data.users.regular.password)
+
+    for (var groupKey in data.groups) {
+        if (data.groups.hasOwnProperty(groupKey)) {
+            const group = data.groups[groupKey]
+            await createGroupIfNotExists(group.name)
         }
     }
 
     return
 }
 
-module.exports = setup
+module.exports = {
+    setup, sendMessage
+}

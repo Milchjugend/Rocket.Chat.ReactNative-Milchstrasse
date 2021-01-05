@@ -1,7 +1,6 @@
 import React from 'react';
 import { FlatList, RefreshControl } from 'react-native';
 import PropTypes from 'prop-types';
-import orderBy from 'lodash/orderBy';
 import { Q } from '@nozbe/watermelondb';
 import moment from 'moment';
 import isEqual from 'lodash/isEqual';
@@ -15,8 +14,9 @@ import EmptyRoom from './EmptyRoom';
 import { isIOS } from '../../utils/deviceInfo';
 import { animateNextTransition } from '../../utils/layoutAnimation';
 import ActivityIndicator from '../../containers/ActivityIndicator';
-import debounce from '../../utils/debounce';
 import { themes } from '../../constants/colors';
+
+const QUERY_SIZE = 50;
 
 class List extends React.Component {
 	static propTypes = {
@@ -30,7 +30,10 @@ class List extends React.Component {
 		loading: PropTypes.bool,
 		listRef: PropTypes.func,
 		hideSystemMessages: PropTypes.array,
-		navigation: PropTypes.object
+		tunread: PropTypes.array,
+		ignored: PropTypes.array,
+		navigation: PropTypes.object,
+		showMessageInMainThread: PropTypes.bool
 	};
 
 	// this.state.loading works for this.onEndReached and RoomView.init
@@ -47,22 +50,19 @@ class List extends React.Component {
 		super(props);
 		console.time(`${ this.constructor.name } init`);
 		console.time(`${ this.constructor.name } mount`);
-
+		this.count = 0;
+		this.needsFetch = false;
 		this.mounted = false;
+		this.animated = false;
 		this.state = {
 			loading: true,
 			end: false,
 			messages: [],
-			refreshing: false,
-			animated: false
+			refreshing: false
 		};
-		this.init();
+		this.query();
 		this.unsubscribeFocus = props.navigation.addListener('focus', () => {
-			if (this.mounted) {
-				this.setState({ animated: true });
-			} else {
-				this.state.animated = true;
-			}
+			this.animated = true;
 		});
 		console.timeEnd(`${ this.constructor.name } init`);
 	}
@@ -72,75 +72,11 @@ class List extends React.Component {
 		console.timeEnd(`${ this.constructor.name } mount`);
 	}
 
-	// eslint-disable-next-line react/sort-comp
-	async init() {
-		const { rid, tmid } = this.props;
-		const db = database.active;
-
-		// handle servers with version < 3.0.0
-		let { hideSystemMessages = [] } = this.props;
-		if (!Array.isArray(hideSystemMessages)) {
-			hideSystemMessages = [];
-		}
-
-		if (tmid) {
-			try {
-				this.thread = await db.collections
-					.get('threads')
-					.find(tmid);
-			} catch (e) {
-				console.log(e);
-			}
-			this.messagesObservable = db.collections
-				.get('thread_messages')
-				.query(Q.where('rid', tmid), Q.or(Q.where('t', Q.notIn(hideSystemMessages)), Q.where('t', Q.eq(null))))
-				.observe();
-		} else if (rid) {
-			this.messagesObservable = db.collections
-				.get('messages')
-				.query(Q.where('rid', rid), Q.or(Q.where('t', Q.notIn(hideSystemMessages)), Q.where('t', Q.eq(null))))
-				.observe();
-		}
-
-		if (rid) {
-			this.unsubscribeMessages();
-			this.messagesSubscription = this.messagesObservable
-				.subscribe((data) => {
-					if (tmid && this.thread) {
-						data = [this.thread, ...data];
-					}
-					const messages = orderBy(data, ['ts'], ['desc']);
-					if (this.mounted) {
-						this.setState({ messages }, () => this.update());
-					} else {
-						this.state.messages = messages;
-					}
-					this.readThreads();
-				});
-		}
-	}
-
-	// eslint-disable-next-line react/sort-comp
-	reload = () => {
-		this.unsubscribeMessages();
-		this.init();
-	}
-
-	readThreads = async() => {
-		const { tmid } = this.props;
-
-		if (tmid) {
-			try {
-				await RocketChat.readThreads(tmid);
-			} catch {
-				// Do nothing
-			}
-		}
-	}
-
 	shouldComponentUpdate(nextProps, nextState) {
 		const { loading, end, refreshing } = this.state;
-		const { hideSystemMessages, theme } = this.props;
+		const {
+			hideSystemMessages, theme, tunread, ignored
+		} = this.props;
 		if (theme !== nextProps.theme) {
 			return true;
 		}
@@ -154,6 +90,12 @@ class List extends React.Component {
 			return true;
 		}
 		if (!isEqual(hideSystemMessages, nextProps.hideSystemMessages)) {
+			return true;
+		}
+		if (!isEqual(tunread, nextProps.tunread)) {
+			return true;
+		}
+		if (!isEqual(ignored, nextProps.ignored)) {
 			return true;
 		}
 		return false;
@@ -177,7 +119,7 @@ class List extends React.Component {
 		console.countReset(`${ this.constructor.name }.render calls`);
 	}
 
-	onEndReached = debounce(async() => {
+	fetchData = async() => {
 		const {
 			loading, end, messages, latest = messages[messages.length - 1]?.ts
 		} = this.state;
@@ -196,12 +138,108 @@ class List extends React.Component {
 				result = await RocketChat.loadMessagesForRoom({ rid, t, latest });
 			}
 
-			this.setState({ end: result.length < 50, loading: false, latest: result[result.length - 1]?.ts }, () => this.loadMoreMessages(result));
+			this.setState({ end: result.length < QUERY_SIZE, loading: false, latest: result[result.length - 1]?.ts }, () => this.loadMoreMessages(result));
 		} catch (e) {
 			this.setState({ loading: false });
 			log(e);
 		}
-	}, 300)
+	}
+
+	query = async() => {
+		this.count += QUERY_SIZE;
+		const { rid, tmid, showMessageInMainThread } = this.props;
+		const db = database.active;
+
+		// handle servers with version < 3.0.0
+		let { hideSystemMessages = [] } = this.props;
+		if (!Array.isArray(hideSystemMessages)) {
+			hideSystemMessages = [];
+		}
+
+		if (tmid) {
+			try {
+				this.thread = await db.collections
+					.get('threads')
+					.find(tmid);
+			} catch (e) {
+				console.log(e);
+			}
+			this.messagesObservable = db.collections
+				.get('thread_messages')
+				.query(
+					Q.where('rid', tmid),
+					Q.experimentalSortBy('ts', Q.desc),
+					Q.experimentalSkip(0),
+					Q.experimentalTake(this.count)
+				)
+				.observe();
+		} else if (rid) {
+			const whereClause = [
+				Q.where('rid', rid),
+				Q.experimentalSortBy('ts', Q.desc),
+				Q.experimentalSkip(0),
+				Q.experimentalTake(this.count)
+			];
+			if (!showMessageInMainThread) {
+				whereClause.push(
+					Q.or(
+						Q.where('tmid', null),
+						Q.where('tshow', Q.eq(true))
+					)
+				);
+			}
+			this.messagesObservable = db.collections
+				.get('messages')
+				.query(...whereClause)
+				.observe();
+		}
+
+		if (rid) {
+			this.unsubscribeMessages();
+			this.messagesSubscription = this.messagesObservable
+				.subscribe((messages) => {
+					if (messages.length <= this.count) {
+						this.needsFetch = true;
+					}
+					if (tmid && this.thread) {
+						messages = [...messages, this.thread];
+					}
+					messages = messages.filter(m => !m.t || !hideSystemMessages?.includes(m.t));
+
+					if (this.mounted) {
+						this.setState({ messages }, () => this.update());
+					} else {
+						this.state.messages = messages;
+					}
+					this.readThreads();
+				});
+		}
+	}
+
+	reload = () => {
+		this.count = 0;
+		this.query();
+	}
+
+	readThreads = async() => {
+		const { tmid } = this.props;
+
+		if (tmid) {
+			try {
+				await RocketChat.readThreads(tmid);
+			} catch {
+				// Do nothing
+			}
+		}
+	}
+
+	onEndReached = async() => {
+		if (this.needsFetch) {
+			this.needsFetch = false;
+			await this.fetchData();
+		}
+		this.query();
+	}
 
 	loadMoreMessages = (result) => {
 		const { end } = this.state;
@@ -248,8 +286,7 @@ class List extends React.Component {
 
 	// eslint-disable-next-line react/sort-comp
 	update = () => {
-		const { animated } = this.state;
-		if (animated) {
+		if (this.animated) {
 			animateNextTransition();
 		}
 		this.forceUpdate();
@@ -305,7 +342,7 @@ class List extends React.Component {
 					removeClippedSubviews={isIOS}
 					initialNumToRender={7}
 					onEndReached={this.onEndReached}
-					onEndReachedThreshold={5}
+					onEndReachedThreshold={0.5}
 					maxToRenderPerBatch={5}
 					windowSize={10}
 					ListFooterComponent={this.renderFooter}

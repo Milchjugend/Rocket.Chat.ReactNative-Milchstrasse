@@ -4,42 +4,37 @@ import { FlatList, StyleSheet } from 'react-native';
 import { connect } from 'react-redux';
 
 import I18n from '../i18n';
-import Separator from '../containers/Separator';
-import ListItem from '../containers/ListItem';
+import * as List from '../containers/List';
 import Status from '../containers/Status/Status';
 import TextInput from '../containers/TextInput';
 import EventEmitter from '../utils/events';
 import Loading from '../containers/Loading';
 import RocketChat from '../lib/rocketchat';
-import log from '../utils/log';
+import log, { logEvent, events } from '../utils/log';
 
 import { LISTENER } from '../containers/Toast';
-import { themes } from '../constants/colors';
 import { withTheme } from '../theme';
 import { getUserSelector } from '../selectors/login';
-import { CustomHeaderButtons, Item, CancelModalButton } from '../containers/HeaderButton';
+import * as HeaderButton from '../containers/HeaderButton';
 import store from '../lib/createStore';
 import { setUser } from '../actions/login';
 import SafeAreaView from '../containers/SafeAreaView';
 
 const STATUS = [{
 	id: 'online',
-	name: I18n.t('Online')
+	name: 'Online'
 }, {
 	id: 'busy',
-	name: I18n.t('Busy')
+	name: 'Busy'
 }, {
 	id: 'away',
-	name: I18n.t('Away')
+	name: 'Away'
 }, {
 	id: 'offline',
-	name: I18n.t('Invisible')
+	name: 'Invisible'
 }];
 
 const styles = StyleSheet.create({
-	status: {
-		marginRight: 16
-	},
 	inputContainer: {
 		marginTop: 32,
 		marginBottom: 32
@@ -78,20 +73,21 @@ class StatusView extends React.Component {
 		const { navigation, isMasterDetail } = this.props;
 		navigation.setOptions({
 			title: I18n.t('Edit_Status'),
-			headerLeft: isMasterDetail ? undefined : () => <CancelModalButton onPress={this.close} />,
+			headerLeft: isMasterDetail ? undefined : () => <HeaderButton.CancelModal onPress={this.close} />,
 			headerRight: () => (
-				<CustomHeaderButtons>
-					<Item
+				<HeaderButton.Container>
+					<HeaderButton.Item
 						title={I18n.t('Done')}
 						onPress={this.submit}
 						testID='status-view-submit'
 					/>
-				</CustomHeaderButtons>
+				</HeaderButton.Container>
 			)
 		});
 	}
 
 	submit = async() => {
+		logEvent(events.STATUS_DONE);
 		const { statusText } = this.state;
 		const { user } = this.props;
 		if (statusText !== user.statusText) {
@@ -114,20 +110,18 @@ class StatusView extends React.Component {
 		try {
 			const result = await RocketChat.setUserStatus(user.status, statusText);
 			if (result.success) {
+				logEvent(events.STATUS_CUSTOM);
 				EventEmitter.emit(LISTENER, { message: I18n.t('Status_saved_successfully') });
 			} else {
+				logEvent(events.STATUS_CUSTOM_F);
 				EventEmitter.emit(LISTENER, { message: I18n.t('error-could-not-change-status') });
 			}
 		} catch {
+			logEvent(events.STATUS_CUSTOM_F);
 			EventEmitter.emit(LISTENER, { message: I18n.t('error-could-not-change-status') });
 		}
 
 		this.setState({ loading: false });
-	}
-
-	renderSeparator = () => {
-		const { theme } = this.props;
-		return <Separator theme={theme} />;
 	}
 
 	renderHeader = () => {
@@ -153,19 +147,20 @@ class StatusView extends React.Component {
 					placeholder={I18n.t('What_are_you_doing_right_now')}
 					testID='status-view-input'
 				/>
-				<Separator theme={theme} />
+				<List.Separator />
 			</>
 		);
 	}
 
 	renderItem = ({ item }) => {
 		const { statusText } = this.state;
-		const { theme, user } = this.props;
+		const { user } = this.props;
 		const { id, name } = item;
 		return (
-			<ListItem
+			<List.Item
 				title={name}
 				onPress={async() => {
+					logEvent(events[`STATUS_${ item.id.toUpperCase() }`]);
 					if (user.status !== item.id) {
 						try {
 							const result = await RocketChat.setUserStatus(item.id, statusText);
@@ -173,30 +168,28 @@ class StatusView extends React.Component {
 								store.dispatch(setUser({ status: item.id }));
 							}
 						} catch (e) {
+							logEvent(events.SET_STATUS_FAIL);
 							log(e);
 						}
 					}
 				}}
 				testID={`status-view-${ id }`}
-				left={() => <Status style={styles.status} size={12} status={item.id} />}
-				theme={theme}
+				left={() => <Status size={12} status={item.id} />}
 			/>
 		);
 	}
 
 	render() {
 		const { loading } = this.state;
-		const { theme } = this.props;
 		return (
-			<SafeAreaView testID='status-view' theme={theme}>
+			<SafeAreaView testID='status-view'>
 				<FlatList
 					data={STATUS}
 					keyExtractor={item => item.id}
-					contentContainerStyle={{ borderColor: themes[theme].separatorColor }}
 					renderItem={this.renderItem}
 					ListHeaderComponent={this.renderHeader}
-					ListFooterComponent={() => <Separator theme={theme} />}
-					ItemSeparatorComponent={this.renderSeparator}
+					ListFooterComponent={List.Separator}
+					ItemSeparatorComponent={List.Separator}
 				/>
 				<Loading visible={loading} />
 			</SafeAreaView>

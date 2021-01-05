@@ -14,9 +14,9 @@ import SearchBox from '../../containers/SearchBox';
 import { CustomIcon } from '../../lib/Icons';
 import StatusBar from '../../containers/StatusBar';
 import ActivityIndicator from '../../containers/ActivityIndicator';
-import { CloseModalButton } from '../../containers/HeaderButton';
+import * as HeaderButton from '../../containers/HeaderButton';
 import debounce from '../../utils/debounce';
-import log from '../../utils/log';
+import log, { logEvent, events } from '../../utils/log';
 import Options from './Options';
 import { withTheme } from '../../theme';
 import { themes } from '../../constants/colors';
@@ -31,7 +31,7 @@ class DirectoryView extends React.Component {
 			title: I18n.t('Directory')
 		};
 		if (isMasterDetail) {
-			options.headerLeft = () => <CloseModalButton navigation={navigation} testID='directory-view-close' />;
+			options.headerLeft = () => <HeaderButton.CloseModal navigation={navigation} testID='directory-view-close' />;
 		}
 		return options;
 	}
@@ -67,7 +67,7 @@ class DirectoryView extends React.Component {
 	}
 
 	onSearchChangeText = (text) => {
-		this.setState({ text });
+		this.setState({ text }, this.search);
 	}
 
 	// eslint-disable-next-line react/sort-comp
@@ -115,6 +115,12 @@ class DirectoryView extends React.Component {
 
 	changeType = (type) => {
 		this.setState({ type, data: [] }, () => this.search());
+
+		if (type === 'users') {
+			logEvent(events.DIRECTORY_SEARCH_USERS);
+		} else if (type === 'channels') {
+			logEvent(events.DIRECTORY_SEARCH_CHANNELS);
+		}
 	}
 
 	toggleWorkspace = () => {
@@ -152,8 +158,9 @@ class DirectoryView extends React.Component {
 				this.goRoom({ rid: result.room._id, name: item.username, t: 'd' });
 			}
 		} else {
+			const { room } = await RocketChat.getRoomInfo(item._id);
 			this.goRoom({
-				rid: item._id, name: item.name, t: 'c', search: true
+				rid: item._id, name: item.name, joinCodeRequired: room.joinCodeRequired, t: 'c', search: true
 			});
 		}
 	}
@@ -181,7 +188,7 @@ class DirectoryView extends React.Component {
 					theme={theme}
 				>
 					<View style={[sharedStyles.separatorVertical, styles.toggleDropdownContainer, { borderColor: themes[theme].separatorColor }]}>
-						<CustomIcon style={[styles.toggleDropdownIcon, { color: themes[theme].tintColor }]} size={20} name={type === 'users' ? 'user' : 'hash'} />
+						<CustomIcon style={[styles.toggleDropdownIcon, { color: themes[theme].tintColor }]} size={20} name={type === 'users' ? 'user' : 'channel-public'} />
 						<Text style={[styles.toggleDropdownText, { color: themes[theme].tintColor }]}>{type === 'users' ? I18n.t('Users') : I18n.t('Channels')}</Text>
 						<CustomIcon name='chevron-down' size={20} style={[styles.toggleDropdownArrow, { color: themes[theme].auxiliaryTintColor }]} />
 					</View>
@@ -214,7 +221,8 @@ class DirectoryView extends React.Component {
 			testID: `federation-view-item-${ item.name }`,
 			style,
 			user,
-			theme
+			theme,
+			rid: item._id
 		};
 
 		if (type === 'users') {
@@ -250,9 +258,8 @@ class DirectoryView extends React.Component {
 			<SafeAreaView
 				style={{ backgroundColor: themes[theme].backgroundColor }}
 				testID='directory-view'
-				theme={theme}
 			>
-				<StatusBar theme={theme} />
+				<StatusBar />
 				<FlatList
 					data={data}
 					style={styles.list}

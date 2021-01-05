@@ -6,11 +6,11 @@ import {
 import { connect } from 'react-redux';
 import RNPickerSelect from 'react-native-picker-select';
 
-import log from '../utils/log';
+import log, { logEvent, events } from '../utils/log';
 import sharedStyles from './Styles';
 import Button from '../containers/Button';
 import I18n from '../i18n';
-import { LegalButton } from '../containers/HeaderButton';
+import * as HeaderButton from '../containers/HeaderButton';
 import { themes } from '../constants/colors';
 import { withTheme } from '../theme';
 import FormContainer, { FormContainerInner } from '../containers/FormContainer';
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
 class RegisterView extends React.Component {
 	static navigationOptions = ({ route, navigation }) => ({
 		title: route.params?.title ?? 'Rocket.Chat',
-		headerRight: () => <LegalButton testID='register-view-more' navigation={navigation} />
+		headerRight: () => <HeaderButton.Legal testID='register-view-more' navigation={navigation} />
 	});
 
 	static propTypes = {
@@ -114,6 +114,7 @@ class RegisterView extends React.Component {
 	}
 
 	submit = async() => {
+		logEvent(events.REGISTER_DEFAULT_SIGN_UP);
 		if (!this.valid()) {
 			return;
 		}
@@ -149,6 +150,7 @@ class RegisterView extends React.Component {
 				return loginRequest({ user: email, password });
 			}
 			if (e.data?.error) {
+				logEvent(events.REGISTER_DEFAULT_SIGN_UP_F);
 				showErrorAlert(e.data.error, I18n.t('Oops'));
 			}
 		}

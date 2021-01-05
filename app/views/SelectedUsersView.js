@@ -11,10 +11,10 @@ import RocketChat from '../lib/rocketchat';
 import UserItem from '../presentation/UserItem';
 import Loading from '../containers/Loading';
 import I18n from '../i18n';
-import log from '../utils/log';
+import log, { logEvent, events } from '../utils/log';
 import SearchBox from '../containers/SearchBox';
 import sharedStyles from './Styles';
-import { Item, CustomHeaderButtons } from '../containers/HeaderButton';
+import * as HeaderButton from '../containers/HeaderButton';
 import StatusBar from '../containers/StatusBar';
 import { themes } from '../constants/colors';
 import { animateNextTransition } from '../utils/layoutAnimation';
@@ -119,9 +119,9 @@ class SelectedUsersView extends React.Component {
 			title,
 			headerRight: () => (
 				(!maxUsers || showButton) && (
-					<CustomHeaderButtons>
-						<Item title={buttonText} onPress={nextAction} testID='selected-users-view-submit' />
-					</CustomHeaderButtons>
+					<HeaderButton.Container>
+						<HeaderButton.Item title={buttonText} onPress={nextAction} testID='selected-users-view-submit' />
+					</HeaderButton.Container>
 				)
 			)
 		};
@@ -183,9 +183,10 @@ class SelectedUsersView extends React.Component {
 			if (this.isGroupChat() && users.length === maxUsers) {
 				return showErrorAlert(I18n.t('Max_number_of_users_allowed_is_number', { maxUsers }), I18n.t('Oops'));
 			}
-
+			logEvent(events.SELECTED_USERS_ADD_USER);
 			addUser(user);
 		} else {
+			logEvent(events.SELECTED_USERS_REMOVE_USER);
 			removeUser(user);
 		}
 	}
@@ -306,10 +307,10 @@ class SelectedUsersView extends React.Component {
 	}
 
 	render = () => {
-		const { loading, theme } = this.props;
+		const { loading } = this.props;
 		return (
-			<SafeAreaView testID='select-users-view' theme={theme}>
-				<StatusBar theme={theme} />
+			<SafeAreaView testID='select-users-view'>
+				<StatusBar />
 				{this.renderList()}
 				<Loading visible={loading} />
 			</SafeAreaView>

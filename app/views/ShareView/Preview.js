@@ -24,9 +24,9 @@ const styles = StyleSheet.create({
 	},
 	fileName: {
 		fontSize: 16,
-		textAlign: 'center',
 		marginHorizontal: 10,
-		...sharedStyles.textMedium
+		...sharedStyles.textMedium,
+		...sharedStyles.textAlignCenter
 	},
 	fileSize: {
 		fontSize: 14,
@@ -96,7 +96,7 @@ const Preview = React.memo(({
 		}
 		return (
 			<IconPreview
-				iconName={type?.match(/image/) ? 'Camera' : 'clip'}
+				iconName={type?.match(/image/) ? 'image' : 'attach'}
 				title={item?.filename}
 				description={prettyBytes(item?.size ?? 0)}
 				theme={theme}
