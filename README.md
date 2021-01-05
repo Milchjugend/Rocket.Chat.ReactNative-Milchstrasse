@@ -1,53 +1,32 @@
-# Rocket.Chat Mobile
+# Milchstrasse
 
-[![Project Dependencies](https://david-dm.org/RocketChat/Rocket.Chat.ReactNative.svg)](https://david-dm.org/RocketChat/Rocket.Chat.ReactNative)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bb15e2392a71473ea59d3f634f35c54e)](https://www.codacy.com/app/RocketChat/Rocket.Chat.ReactNative?utm_source=github.com&utm_medium=referral&utm_content=RocketChat/Rocket.Chat.ReactNative&utm_campaign=badger)
-[![codecov](https://codecov.io/gh/RocketChat/Rocket.Chat.ReactNative/branch/master/graph/badge.svg)](https://codecov.io/gh/RocketChat/Rocket.Chat.ReactNative)
-[![CodeFactor](https://www.codefactor.io/repository/github/rocketchat/rocket.chat.reactnative/badge)](https://www.codefactor.io/repository/github/rocketchat/rocket.chat.reactnative)
+Komm mit uns auf eine Reise zur Milchstrasse – von deiner Milchjugend.
 
-**Supported Server Versions:** 0.70.0+
+In der Milchstrasse App findest Du lesbische, schwule, bi, trans, inter und ace Queers in deinem Alter und alle dazwischen und ausserhalb. Hier tummelt sich deine Community – sei ein Teil davon und starte durch im queeren Universum.
+
+Auf der Milchstrasse kannst Du
+• ein Profil anlegen und deiner Community zeigen, wer Du bist und was Dich interessiert.
+• Dich mit deinen Freund*innen in Chats verbinden und neue Leute kennen lernen. Du kannst auch bestehenden Gruppenchats beitreten oder eigene gründen.
+• eine queere Veranstaltung planen. Sei es ein queerer Lesenachmittag oder eine spontane Party – mit der Milchstrasse wissen deine Freund*innen immer, was läuft.
+• Dir die queere Agenda anschauen und im dazugehörigen Chat Leute treffen die an die gleichen Events gehen wie du.
+
+Tritt ein in unser queeres Universum und werde Teil der Milchstrasse. Mach Dir jetzt dein Profil und starte durch!
+
+Who run the world? Queers!
+
 
 ## Download
 
-### Official apps
-<a href="https://play.google.com/store/apps/details?id=chat.rocket.android">
-  <img alt="Download on Google Play" src="https://play.google.com/intl/en_us/badges/images/badge_new.png" height=43>
+### Milchstrasse Apps für Android und iOS
+<a href="https://play.google.com/store/apps/details?id=ch.milchjugend.milchstrasse">
+  <img alt="Download von Google Play" src="https://play.google.com/intl/en_us/badges/images/badge_new.png" height=43>
 </a>
-<a href="https://apps.apple.com/us/app/rocket-chat/id1148741252">
-  <img alt="Download on App Store" src="https://user-images.githubusercontent.com/7317008/43209852-4ca39622-904b-11e8-8ce1-cdc3aee76ae9.png" height=43>
-</a>
-
-### Experimental apps
-<a href="https://play.google.com/store/apps/details?id=chat.rocket.reactnative">
-  <img alt="Download on Google Play" src="https://play.google.com/intl/en_us/badges/images/badge_new.png" height=43>
-</a>
-<a href="https://itunes.apple.com/us/app/rocket-chat-experimental/id1272915472">
-  <img alt="Download on App Store" src="https://user-images.githubusercontent.com/7317008/43209852-4ca39622-904b-11e8-8ce1-cdc3aee76ae9.png" height=43>
+<a href="https://apps.apple.com/ch/app/milchstrasse/id1490430747">
+  <img alt="Download von App Store" src="https://user-images.githubusercontent.com/7317008/43209852-4ca39622-904b-11e8-8ce1-cdc3aee76ae9.png" height=43>
 </a>
 
-## Beta Access
 
-### TestFlight
-
-You can signup to our TestFlight builds by accessing these links:
-
-- Official: https://testflight.apple.com/join/3gcYeoMr
-- Experimental: https://testflight.apple.com/join/7I3dLCNT.
-
-### Google Play beta
-
-You can subscribe to Google Play Beta program and download latest versions:
-
-- Official: https://play.google.com/store/apps/details?id=chat.rocket.android
-- Experimental: https://play.google.com/store/apps/details?id=chat.rocket.reactnative
-
-## Reporting an Issue
-
-[Github Issues](https://github.com/RocketChat/Rocket.Chat.ReactNative/issues) are used to track todos, bugs, feature requests, and more.
-
-Also check the [#react-native](https://open.rocket.chat/channel/react-native) community on [open.rocket.chat](https://open.rocket.chat). We'd like to help.
-
-## Installing dependencies
+## Eigene App für Milchstrasse erstellen
 
 Follow the [React Native Getting Started Guide](https://facebook.github.io/react-native/docs/getting-started.html) for detailed instructions on setting up your local machine for development.
 
@@ -67,142 +46,6 @@ Follow the [React Native Getting Started Guide](https://facebook.github.io/react
     $ npx react-native run-android
     ```
 
-### Running single server
-If you don't need multiple servers, there is a branch `single-server` just for that.
-Temp whitelabel docs: https://docs.google.com/document/d/17ib2Le_SH6U2gP0sEuKapF2J-WgqZxPFMRRVUSofz7Y/edit
-
-## Current priorities
-1) Omnichannel support
-2) E2E encryption
-
-## Features
-| Feature                                                   	    | Status 	|
-|---------------------------------------------------------------	|--------	|
-| Jitsi Integration                                             	| ✅    	|
-| Federation (Directory)                                        	| ✅    	|
-| Discussions                                                     | ✅    	|
-| Omnichannel                                                     | ❌    	|
-| Threads                                                       	| ✅    	|
-| Record Audio                                                  	| ✅    	|
-| Record Video                                                  	| ✅    	|
-| Commands                                                      	| ✅    	|
-| Draft message per room                                        	| ✅    	|
-| Share Extension                                               	| ✅    	|
-| Notifications Preferences                                     	| ✅    	|
-| Edited status                                                 	| ✅    	|
-| Upload video                                                  	| ✅    	|
-| Grouped messages                                              	| ✅    	|
-| Mark room as read                                             	| ✅    	|
-| Mark room as unread                                           	| ✅    	|
-| Tablet Support                                                	| ✅    	|
-| Read receipt                                                  	| ✅    	|
-| Broadbast Channel                                             	| ✅    	|
-| Authentication via SAML                                       	| ✅    	|
-| Authentication via CAS                                        	| ✅    	|
-| Custom Fields on Signup                                       	| ✅    	|
-| Report message                                                	| ✅    	|
-| Theming                                                       	| ✅    	|
-| Settings -> Review the App                                    	| ✅    	|
-| Settings -> Default Browser                                   	| ✅    	|
-| Admin panel                                                   	| ✅    	|
-| Reply message from notification                               	| ✅    	|
-| Unread counter banner on message list                         	| ✅    	|
-| E2E Encryption                                                 	| ❌    	|
-| Join a Protected Room                                         	| ❌    	|
-| Optional Analytics                                            	| ✅    	|
-| Settings -> About us                                          	| ❌    	|
-| Settings -> Contact us                                        	| ✅    	|
-| Settings -> Update App Icon                                   	| ❌    	|
-| Settings -> Share                                             	| ✅    	|
-| Accessibility (Medium)                                        	| ❌    	|
-| Accessibility (Advanced)                                      	| ❌    	|
-| Authentication via Meteor                                     	| ❌    	|
-| Authentication via Wordpress                                  	| ✅    	|
-| Authentication via Custom OAuth                               	| ✅    	|
-| Add user to the room                                          	| ✅    	|
-| Send message                                                  	| ✅    	|
-| Authentication via Email                                      	| ✅    	|
-| Authentication via Username                                   	| ✅    	|
-| Authentication via LDAP                                       	| ✅    	|
-| Message format: Markdown                                      	| ✅    	|
-| Message format: System messages (Welcome, Message removed...) 	| ✅    	|
-| Message format: links                                         	| ✅    	|
-| Message format: images                                        	| ✅    	|
-| Message format: replies                                       	| ✅    	|
-| Message format: alias with custom message (title & text)      	| ✅    	|
-| Messages list: day separation                                 	| ✅    	|
-| Messages list: load more on scroll                            	| ✅    	|
-| Messages list: receive new messages via subscription          	| ✅    	|
-| Subscriptions list                                            	| ✅    	|
-| Segmented subscriptions list: Favorites                       	| ✅    	|
-| Segmented subscriptions list: Unreads                         	| ✅    	|
-| Segmented subscriptions list: DMs                             	| ✅    	|
-| Segmented subscriptions list: Channels                        	| ✅    	|
-| Subscriptions list: update user status via subscription       	| ✅    	|
-| Numbers os messages unread in the Subscriptions list          	| ✅    	|
-| Status change                                                 	| ✅    	|
-| Upload image                                                  	| ✅    	|
-| Take picture & upload it                                      	| ✅    	|
-| 2FA                                                           	| ✅    	|
-| Signup                                                        	| ✅    	|
-| Autocomplete with usernames                                   	| ✅    	|
-| Autocomplete with @all & @here                                	| ✅    	|
-| Autocomplete room/channel name                                	| ✅    	|
-| Upload audio                                                  	| ✅    	|
-| Forgot your password                                          	| ✅    	|
-| Login screen: terms of service                                	| ✅    	|
-| Login screen: privacy policy                                  	| ✅    	|
-| Authentication via Google                                     	| ✅    	|
-| Authentication via Facebook                                   	| ✅    	|
-| Authentication via Twitter                                    	| ✅    	|
-| Authentication via GitHub                                     	| ✅    	|
-| Authentication via GitLab                                     	| ✅    	|
-| Authentication via LinkedIn                                   	| ✅    	|
-| Create channel                                                	| ✅    	|
-| Search Local                                                  	| ✅    	|
-| Search in the API                                             	| ✅    	|
-| Settings -> License                                           	| ✅    	|
-| Settings -> App version                                       	| ✅    	|
-| Autocomplete emoji                                            	| ✅    	|
-| Upload file (documents, PDFs, spreadsheets, zip files, etc)   	| ✅    	|
-| Copy message                                                  	| ✅    	|
-| Pin message                                                   	| ✅    	|
-| Unpin message                                                 	| ✅    	|
-| Channel Info screen -> Members                                	| ✅    	|
-| Channel Info screen -> Pinned                                 	| ✅    	|
-| Channel Info screen -> Starred                                	| ✅    	|
-| Channel Info screen -> Uploads                                	| ✅    	|
-| Star message                                                  	| ✅    	|
-| Unstar message                                                	| ✅    	|
-| Channel Info screen -> Topic                                  	| ✅    	|
-| Channel Info screen -> Description                            	| ✅    	|
-| Star a channel                                                	| ✅    	|
-| Message format: videos                                        	| ✅    	|
-| Message format: audios                                        	| ✅    	|
-| Edit message                                                  	| ✅    	|
-| Delete a message                                              	| ✅    	|
-| Reply message                                                 	| ✅    	|
-| Quote message                                                 	| ✅    	|
-| Muted state                                                   	| ✅    	|
-| Offline reading                                               	| ✅    	|
-| Offline writing                                               	| ✅    	|
-| Edit profile                                                  	| ✅    	|
-| Reactions                                                     	| ✅    	|
-| Custom emojis                                                 	| ✅    	|
-| Accessibility (Basic)                                         	| ✅    	|
-| Tap notification, go to the channel                           	| ✅    	|
-| Deep links: Authentication                                    	| ✅    	|
-| Deep links: Rooms                                             	| ✅    	|
-| Full name setting                                             	| ✅    	|
-| Read only rooms                                               	| ✅    	|
-| Typing status                                                 	| ✅    	|
-| Create channel/group                                          	| ✅    	|
-| Disable registration setting                                  	| ✅    	|
-| Unread red line indicator on message list                     	| ✅    	|
-| Search Messages in Channel                                    	| ✅    	|
-| Mentions List                                                 	| ✅    	|
-| Attachment List                                               	| ✅    	|
-| Join a Room                                                   	| ✅    	|
 
 ## Detox (end-to-end tests)
 - Build your app
