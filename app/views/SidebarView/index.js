@@ -218,13 +218,6 @@ class Sidebar extends Component {
 					current={this.currentItemKey === 'AgendaStackNavigator'}
 				/>
 				<SidebarItem
-					text={I18n.t('Chat_Profile_Image')}
-					left={<CustomIcon name='user' size={20} color={themes[theme].titleText} />}
-					onPress={() => this.sidebarNavigate('ProfileStackNavigator')}
-					testID='sidebar-profile'
-					current={this.currentItemKey === 'ProfileStackNavigator'}
-				/>
-				<SidebarItem
 					text={I18n.t('Settings')}
 					left={<CustomIcon name='administration' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('SettingsStackNavigator')}
