@@ -1505,6 +1505,9 @@ const RocketChat = {
 	useInviteToken(token) {
 		// RC 2.4.0
 		return this.post('useInviteToken', { token });
+	},
+	canAccessRoom(rid, uid) {
+		return this.methodCall('canAccessRoom', rid, uid);
 	}
 };
 

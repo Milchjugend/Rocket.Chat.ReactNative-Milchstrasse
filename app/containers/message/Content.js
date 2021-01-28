@@ -58,6 +58,7 @@ const Content = React.memo((props) => {
 				channels={props.channels}
 				mentions={props.mentions}
 				navToRoomInfo={props.navToRoomInfo}
+				navToRoomPreview={props.navToRoomPreview}
 				tmid={props.tmid}
 				useRealName={props.useRealName}
 				theme={props.theme}
@@ -130,6 +131,7 @@ Content.propTypes = {
 	channels: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
 	mentions: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
 	navToRoomInfo: PropTypes.func,
+	navToRoomPreview: PropTypes.func,
 	useRealName: PropTypes.bool,
 	isIgnored: PropTypes.bool,
 	type: PropTypes.string
