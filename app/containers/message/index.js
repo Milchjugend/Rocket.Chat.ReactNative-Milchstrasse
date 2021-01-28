@@ -46,6 +46,7 @@ class MessageContainer extends React.Component {
 		showAttachment: PropTypes.func,
 		onReactionLongPress: PropTypes.func,
 		navToRoomInfo: PropTypes.func,
+		navToRoomPreview: PropTypes.func,
 		callJitsi: PropTypes.func,
 		blockAction: PropTypes.func,
 		theme: PropTypes.string,
@@ -67,6 +68,7 @@ class MessageContainer extends React.Component {
 		showAttachment: () => {},
 		onReactionLongPress: () => {},
 		navToRoomInfo: () => {},
+		navToRoomPreview: () => {},
 		callJitsi: () => {},
 		blockAction: () => {},
 		archived: false,
@@ -267,7 +269,7 @@ class MessageContainer extends React.Component {
 
 	render() {
 		const {
-			item, user, style, archived, baseUrl, useRealName, broadcast, fetchThreadName, showAttachment, timeFormat, isReadReceiptEnabled, autoTranslateRoom, autoTranslateLanguage, navToRoomInfo, getCustomEmoji, isThreadRoom, callJitsi, blockAction, rid, theme, threadBadgeColor, toggleFollowThread
+			item, user, style, archived, baseUrl, useRealName, broadcast, fetchThreadName, showAttachment, timeFormat, isReadReceiptEnabled, autoTranslateRoom, autoTranslateLanguage, navToRoomInfo, navToRoomPreview, getCustomEmoji, isThreadRoom, callJitsi, blockAction, rid, theme, threadBadgeColor, toggleFollowThread
 		} = this.props;
 		const {
 			id, msg, ts, attachments, urls, reactions, t, avatar, emoji, u, alias, editedBy, role, drid, dcount, dlm, tmid, tcount, tlm, tmsg, mentions, channels, unread, blocks, autoTranslate: autoTranslateMessage, replies
@@ -344,6 +346,7 @@ class MessageContainer extends React.Component {
 					showAttachment={showAttachment}
 					getCustomEmoji={getCustomEmoji}
 					navToRoomInfo={navToRoomInfo}
+					navToRoomPreview={navToRoomPreview}
 					callJitsi={callJitsi}
 					blockAction={blockAction}
 					theme={theme}

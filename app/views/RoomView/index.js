@@ -809,6 +809,19 @@ class RoomView extends React.Component {
 		}
 	}
 
+	navToRoomPreview = async({ rid, name }) => {
+		const { user: { id: uid } } = this.props;
+		try {
+			const room = await RocketChat.canAccessRoom(rid, uid);
+			if (room) {
+				await Navigation.navigate('RoomsListView');
+				Navigation.navigate('RoomView', { rid, name, t: room.t });
+			}
+		} catch {
+			EventEmitter.emit(LISTENER, { message: I18n.t('error-not-allowed') });
+		}
+	}
+
 	callJitsi = () => {
 		const { room } = this.state;
 		const { jitsiTimeout } = room;
@@ -923,6 +936,7 @@ class RoomView extends React.Component {
 				autoTranslateRoom={canAutoTranslate && room.autoTranslate}
 				autoTranslateLanguage={room.autoTranslateLanguage}
 				navToRoomInfo={this.navToRoomInfo}
+				navToRoomPreview={this.navToRoomPreview}
 				getCustomEmoji={this.getCustomEmoji}
 				callJitsi={this.callJitsi}
 				blockAction={this.blockAction}
