@@ -1,4 +1,4 @@
-# e2e Testing
+# E2E Testing
 
 ## Contents
 
@@ -13,7 +13,7 @@
 
 Either
 
-* Install Rocket.Chat meteor app by following this [guide](https://rocket.chat/docs/developer-guides/quick-start).
+* Install Rocket.Chat meteor app by following this [guide](https://docs.rocket.chat/guides/developer/quick-start).
 
 Or
 

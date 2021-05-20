@@ -4,9 +4,8 @@ import {
 	View, StyleSheet, FlatList, Text
 } from 'react-native';
 import { connect } from 'react-redux';
-import equal from 'deep-equal';
-import { orderBy } from 'lodash';
 import { Q } from '@nozbe/watermelondb';
+import * as List from '../containers/List';
 
 import Touch from '../utils/touch';
 import database from '../lib/database';
@@ -14,10 +13,10 @@ import RocketChat from '../lib/rocketchat';
 import UserItem from '../presentation/UserItem';
 import sharedStyles from './Styles';
 import I18n from '../i18n';
-import log from '../utils/log';
+import log, { logEvent, events } from '../utils/log';
 import SearchBox from '../containers/SearchBox';
 import { CustomIcon } from '../lib/Icons';
-import { CloseModalButton } from '../containers/HeaderButton';
+import * as HeaderButton from '../containers/HeaderButton';
 import StatusBar from '../containers/StatusBar';
 import { themes } from '../constants/colors';
 import { withTheme } from '../theme';
@@ -27,10 +26,9 @@ import { createChannelRequest } from '../actions/createChannel';
 import { goRoom } from '../utils/goRoom';
 import SafeAreaView from '../containers/SafeAreaView';
 
+const QUERY_SIZE = 50;
+
 const styles = StyleSheet.create({
-	separator: {
-		marginLeft: 60
-	},
 	button: {
 		height: 46,
 		flexDirection: 'row',
@@ -51,7 +49,7 @@ const styles = StyleSheet.create({
 
 class NewMessageView extends React.Component {
 	static navigationOptions = ({ navigation }) => ({
-		headerLeft: () => <CloseModalButton navigation={navigation} testID='new-message-view-close' />,
+		headerLeft: () => <HeaderButton.CloseModal navigation={navigation} testID='new-message-view-close' />,
 		title: I18n.t('New_Message')
 	})
 
@@ -77,40 +75,20 @@ class NewMessageView extends React.Component {
 		};
 	}
 
-	shouldComponentUpdate(nextProps, nextState) {
-		const { search, chats } = this.state;
-		const { theme } = this.props;
-		if (nextProps.theme !== theme) {
-			return true;
-		}
-		if (!equal(nextState.search, search)) {
-			return true;
-		}
-		if (!equal(nextState.chats, chats)) {
-			return true;
-		}
-		return false;
-	}
-
-	componentWillUnmount() {
-		if (this.querySubscription && this.querySubscription.unsubscribe) {
-			this.querySubscription.unsubscribe();
-		}
-	}
-
 	// eslint-disable-next-line react/sort-comp
 	init = async() => {
 		try {
 			const db = database.active;
-			const observable = await db.collections
+			const chats = await db.collections
 				.get('subscriptions')
-				.query(Q.where('t', 'd'))
-				.observeWithColumns(['room_updated_at']);
+				.query(
+					Q.where('t', 'd'),
+					Q.experimentalTake(QUERY_SIZE),
+					Q.experimentalSortBy('room_updated_at', Q.desc)
+				)
+				.fetch();
 
-			this.querySubscription = observable.subscribe((data) => {
-				const chats = orderBy(data, ['roomUpdatedAt'], ['desc']);
-				this.setState({ chats });
-			});
+			this.setState({ chats });
 		} catch (e) {
 			log(e);
 		}
@@ -133,11 +111,13 @@ class NewMessageView extends React.Component {
 	}
 
 	createChannel = () => {
+		logEvent(events.NEW_MSG_CREATE_CHANNEL);
 		const { navigation } = this.props;
 		navigation.navigate('SelectedUsersViewCreateChannel', { nextAction: () => navigation.navigate('CreateChannelView') });
 	}
 
 	createGroupChat = () => {
+		logEvent(events.NEW_MSG_CREATE_GROUP_CHAT);
 		const { createChannel, maxUsers, navigation } = this.props;
 		navigation.navigate('SelectedUsersViewCreateChannel', {
 			nextAction: () => createChannel({ group: true }),
@@ -147,6 +127,7 @@ class NewMessageView extends React.Component {
 	}
 
 	goRoom = (item) => {
+		logEvent(events.NEW_MSG_CHAT_WITH_USER);
 		const { isMasterDetail, navigation } = this.props;
 		if (isMasterDetail) {
 			navigation.pop();
@@ -174,6 +155,7 @@ class NewMessageView extends React.Component {
 	}
 
 	createDiscussion = () => {
+		logEvent(events.NEW_MSG_CREATE_DISCUSSION);
 		Navigation.navigate('CreateDiscussionView');
 	}
 
@@ -186,20 +168,20 @@ class NewMessageView extends React.Component {
 					{this.renderButton({
 						onPress: this.createChannel,
 						title: I18n.t('Create_Channel'),
-						icon: 'hash',
+						icon: 'channel-public',
 						testID: 'new-message-view-create-channel',
 						first: true
 					})}
 					{maxUsers > 2 ? this.renderButton({
 						onPress: this.createGroupChat,
 						title: I18n.t('Create_Direct_Messages'),
-						icon: 'team',
+						icon: 'message',
 						testID: 'new-message-view-create-direct-message'
 					}) : null}
 					{this.renderButton({
 						onPress: this.createDiscussion,
 						title: I18n.t('Create_Discussion'),
-						icon: 'chat',
+						icon: 'discussions',
 						testID: 'new-message-view-create-discussion'
 					})}
 				</View>
@@ -207,10 +189,6 @@ class NewMessageView extends React.Component {
 		);
 	}
 
-	renderSeparator = () => {
-		const { theme } = this.props;
-		return <View style={[sharedStyles.separator, styles.separator, { backgroundColor: themes[theme].separatorColor }]} />;
-	}
 
 	renderItem = ({ item, index }) => {
 		const { search, chats } = this.state;
@@ -250,18 +228,17 @@ class NewMessageView extends React.Component {
 				keyExtractor={item => item._id}
 				ListHeaderComponent={this.renderHeader}
 				renderItem={this.renderItem}
-				ItemSeparatorComponent={this.renderSeparator}
+				ItemSeparatorComponent={List.Separator}
 				contentContainerStyle={{ backgroundColor: themes[theme].backgroundColor }}
 				keyboardShouldPersistTaps='always'
 			/>
 		);
 	}
 
-	render = () => {
-		const { theme } = this.props;
+	render() {
 		return (
-			<SafeAreaView testID='new-message-view' theme={theme}>
-				<StatusBar theme={theme} />
+			<SafeAreaView testID='new-message-view'>
+				<StatusBar />
 				{this.renderList()}
 			</SafeAreaView>
 		);

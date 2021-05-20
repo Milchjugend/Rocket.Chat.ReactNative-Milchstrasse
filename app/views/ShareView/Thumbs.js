@@ -80,7 +80,7 @@ const ThumbContent = React.memo(({ item, theme, isShareExtension }) => {
 			return (
 				<View style={[styles.thumb, { borderColor: themes[theme].borderColor }]}>
 					<CustomIcon
-						name='Camera'
+						name='image'
 						size={30}
 						color={themes[theme].tintColor}
 					/>
@@ -90,18 +90,30 @@ const ThumbContent = React.memo(({ item, theme, isShareExtension }) => {
 	}
 
 	if (type?.match(/video/)) {
-		const { uri } = item;
-		return (
-			<>
-				<Image source={{ uri }} style={styles.thumb} />
-				<CustomIcon
-					name='video-1'
-					size={20}
-					color={themes[theme].buttonText}
-					style={styles.videoThumbIcon}
-				/>
-			</>
-		);
+		if (isIOS) {
+			return (
+				<View style={[styles.thumb, { borderColor: themes[theme].borderColor }]}>
+					<CustomIcon
+						name='camera'
+						size={30}
+						color={themes[theme].tintColor}
+					/>
+				</View>
+			);
+		} else {
+			const { uri } = item;
+			return (
+				<>
+					<Image source={{ uri }} style={styles.thumb} />
+					<CustomIcon
+						name='camera-filled'
+						size={20}
+						color={themes[theme].buttonText}
+						style={styles.videoThumbIcon}
+					/>
+				</>
+			);
+		}
 	}
 
 	// Multiple files upload of files different than image/video is not implemented, so there's no thumb
@@ -127,7 +139,7 @@ const Thumb = ({
 			>
 				<View style={[styles.removeView, { borderColor: themes[theme].auxiliaryBackground }]}>
 					<CustomIcon
-						name='Cross'
+						name='close'
 						color={themes[theme].backgroundColor}
 						size={14}
 					/>
@@ -167,6 +179,7 @@ const Thumbs = React.memo(({
 			/>
 		);
 	}
+	return null;
 });
 Thumbs.propTypes = {
 	attachments: PropTypes.array,

@@ -9,6 +9,7 @@ import { themes } from '../../constants/colors';
 import { withTheme } from '../../theme';
 import { isAndroid, isTablet } from '../../utils/deviceInfo';
 import sharedStyles from '../Styles';
+import { makeThreadName } from '../../utils/room';
 
 const androidMarginLeft = isTablet ? 0 : 4;
 
@@ -45,24 +46,31 @@ const Header = React.memo(({ room, thread, theme }) => {
 	}
 	let icon;
 	if (type === 'discussion') {
-		icon = 'chat';
+		icon = 'discussions';
 	} else if (type === 'thread') {
 		icon = 'threads';
 	} else if (type === 'c') {
-		icon = 'hash';
+		icon = 'channel-public';
 	} else if (type === 'l') {
-		icon = 'livechat';
+		icon = 'omnichannel';
 	} else if (type === 'd') {
 		if (RocketChat.isGroupChat(room)) {
 			icon = 'team';
 		} else {
-			icon = 'at';
+			icon = 'mention';
 		}
 	} else {
-		icon = 'lock';
+		icon = 'channel-private';
 	}
 
 	const textColor = themes[theme].previewTintColor;
+
+	let title;
+	if (thread?.id) {
+		title = makeThreadName(thread);
+	} else {
+		title = RocketChat.getRoomTitle(room);
+	}
 
 	return (
 		<View style={styles.container}>
@@ -78,7 +86,7 @@ const Header = React.memo(({ room, thread, theme }) => {
 						style={[styles.name, { color: textColor }]}
 						numberOfLines={1}
 					>
-						{thread?.msg ?? RocketChat.getRoomTitle(room)}
+						{title}
 					</Text>
 				</Text>
 			</View>

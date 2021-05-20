@@ -19,7 +19,7 @@ const DirectoryItemLabel = React.memo(({ text, theme }) => {
 });
 
 const DirectoryItem = ({
-	title, description, avatar, onPress, testID, style, baseUrl, user, rightLabel, type, theme, userCount, item, onPressMembers
+	title, description, avatar, onPress, testID, style, baseUrl, user, rightLabel, type, rid, theme, userCount, item, onPressMembers
 }) => (
 	<Touch
 		onPress={onPress}
@@ -32,6 +32,7 @@ const DirectoryItem = ({
 				text={avatar}
 				size={30}
 				type={type}
+				rid={rid}
 				style={styles.directoryItemAvatar}
 				baseUrl={baseUrl}
 				userId={user.id}

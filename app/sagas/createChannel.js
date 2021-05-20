@@ -10,6 +10,7 @@ import RocketChat from '../lib/rocketchat';
 import Navigation from '../lib/Navigation';
 import database from '../lib/database';
 import I18n from '../i18n';
+import { logEvent, events } from '../utils/log';
 import { goRoom } from '../utils/goRoom';
 
 const createChannel = function createChannel(data) {
@@ -29,17 +30,30 @@ const handleRequest = function* handleRequest({ data }) {
 
 		let sub;
 		if (data.group) {
+			logEvent(events.SELECTED_USERS_CREATE_GROUP);
 			const result = yield call(createGroupChat);
 			if (result.success) {
 				({ room: sub } = result);
 			}
 		} else {
+			const {
+				type,
+				readOnly,
+				broadcast,
+				encrypted
+			} = data;
+			logEvent(events.CR_CREATE, {
+				type: type ? 'private' : 'public',
+				readOnly,
+				broadcast,
+				encrypted
+			});
 			sub = yield call(createChannel, data);
 		}
 
 		try {
 			const db = database.active;
-			const subCollection = db.collections.get('subscriptions');
+			const subCollection = db.get('subscriptions');
 			yield db.action(async() => {
 				await subCollection.create((s) => {
 					s._raw = sanitizedRaw({ id: sub.rid }, subCollection.schema);
@@ -52,6 +66,7 @@ const handleRequest = function* handleRequest({ data }) {
 
 		yield put(createChannelSuccess(sub));
 	} catch (err) {
+		logEvent(events[data.group ? 'SELECTED_USERS_CREATE_GROUP_F' : 'CR_CREATE_F']);
 		yield put(createChannelFailure(err));
 	}
 };

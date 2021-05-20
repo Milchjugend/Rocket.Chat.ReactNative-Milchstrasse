@@ -9,6 +9,7 @@ import {
 	SMALL_SWIPE,
 	LONG_SWIPE
 } from './styles';
+import { isRTL } from '../../i18n';
 import { themes } from '../../constants/colors';
 import { LeftActions, RightActions } from './Actions';
 
@@ -26,22 +27,28 @@ class Touchable extends React.Component {
 		hideChannel: PropTypes.func,
 		children: PropTypes.element,
 		theme: PropTypes.string,
-		isFocused: PropTypes.bool
+		isFocused: PropTypes.bool,
+		swipeEnabled: PropTypes.bool
 	}
 
 	constructor(props) {
 		super(props);
 		this.dragX = new Animated.Value(0);
 		this.rowOffSet = new Animated.Value(0);
+		this.reverse = new Animated.Value(isRTL() ? -1 : 1);
 		this.transX = Animated.add(
 			this.rowOffSet,
 			this.dragX
+		);
+		this.transXReverse = Animated.multiply(
+			this.transX,
+			this.reverse
 		);
 		this.state = {
 			rowState: 0 // 0: closed, 1: right opened, -1: left opened
 		};
 		this._onGestureEvent = Animated.event(
-			[{ nativeEvent: { translationX: this.dragX } }]
+			[{ nativeEvent: { translationX: this.dragX } }], { useNativeDriver: true }
 		);
 		this._value = 0;
 	}
@@ -61,18 +68,36 @@ class Touchable extends React.Component {
 			let toValue = 0;
 			if (rowState === 0) { // if no option is opened
 				if (translationX > 0 && translationX < LONG_SWIPE) {
-					toValue = ACTION_WIDTH; // open left option if he swipe right but not enough to trigger action
+					// open leading option if he swipe right but not enough to trigger action
+					if (isRTL()) {
+						toValue = 2 * ACTION_WIDTH;
+					} else {
+						toValue = ACTION_WIDTH;
+					}
 					this.setState({ rowState: -1 });
 				} else if (translationX >= LONG_SWIPE) {
 					toValue = 0;
-					this.toggleRead();
+					if (isRTL()) {
+						this.hideChannel();
+					} else {
+						this.toggleRead();
+					}
 				} else if (translationX < 0 && translationX > -LONG_SWIPE) {
-					toValue = -2 * ACTION_WIDTH; // open right option if he swipe left
+					// open trailing option if he swipe left
+					if (isRTL()) {
+						toValue = -ACTION_WIDTH;
+					} else {
+						toValue = -2 * ACTION_WIDTH;
+					}
 					this.setState({ rowState: 1 });
 				} else if (translationX <= -LONG_SWIPE) {
 					toValue = 0;
 					this.setState({ rowState: 0 });
-					this.hideChannel();
+					if (isRTL()) {
+						this.toggleRead();
+					} else {
+						this.hideChannel();
+					}
 				} else {
 					toValue = 0;
 				}
@@ -85,7 +110,13 @@ class Touchable extends React.Component {
 				} else if (this._value > LONG_SWIPE) {
 					toValue = 0;
 					this.setState({ rowState: 0 });
-					this.toggleRead();
+					if (isRTL()) {
+						this.hideChannel();
+					} else {
+						this.toggleRead();
+					}
+				} else if (isRTL()) {
+					toValue = 2 * ACTION_WIDTH;
 				} else {
 					toValue = ACTION_WIDTH;
 				}
@@ -98,7 +129,13 @@ class Touchable extends React.Component {
 				} else if (this._value < -LONG_SWIPE) {
 					toValue = 0;
 					this.setState({ rowState: 0 });
-					this.hideChannel();
+					if (isRTL()) {
+						this.toggleRead();
+					} else {
+						this.hideChannel();
+					}
+				} else if (isRTL()) {
+					toValue = -ACTION_WIDTH;
 				} else {
 					toValue = -2 * ACTION_WIDTH;
 				}
@@ -168,7 +205,7 @@ class Touchable extends React.Component {
 
 		render() {
 			const {
-				testID, isRead, width, favorite, children, theme, isFocused
+				testID, isRead, width, favorite, children, theme, isFocused, swipeEnabled
 			} = this.props;
 
 			return (
@@ -177,17 +214,18 @@ class Touchable extends React.Component {
 					minDeltaX={20}
 					onGestureEvent={this._onGestureEvent}
 					onHandlerStateChange={this._onHandlerStateChange}
+					enabled={swipeEnabled}
 				>
 					<Animated.View>
 						<LeftActions
-							transX={this.transX}
+							transX={this.transXReverse}
 							isRead={isRead}
 							width={width}
 							onToggleReadPress={this.onToggleReadPress}
 							theme={theme}
 						/>
 						<RightActions
-							transX={this.transX}
+							transX={this.transXReverse}
 							favorite={favorite}
 							width={width}
 							toggleFav={this.toggleFav}

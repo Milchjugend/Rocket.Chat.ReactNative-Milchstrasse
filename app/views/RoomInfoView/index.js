@@ -1,12 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {
-	View, Text, ScrollView, ActivityIndicator
-} from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { BorderlessButton } from 'react-native-gesture-handler';
 import { connect } from 'react-redux';
 import UAParser from 'ua-parser-js';
-import _ from 'lodash';
+import isEmpty from 'lodash/isEmpty';
 
 import WebView from 'react-native-webview';
 import database from '../../lib/database';
@@ -18,22 +16,22 @@ import sharedStyles from '../Styles';
 import RocketChat from '../../lib/rocketchat';
 import RoomTypeIcon from '../../containers/RoomTypeIcon';
 import I18n from '../../i18n';
-import { CustomHeaderButtons, CloseModalButton } from '../../containers/HeaderButton';
+import * as HeaderButton from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
-import log from '../../utils/log';
+import log, { logEvent, events } from '../../utils/log';
 import { themes } from '../../constants/colors';
 import { withTheme } from '../../theme';
-import { getUserSelector } from '../../selectors/login';
 import Markdown from '../../containers/markdown';
+import { LISTENER } from '../../containers/Toast';
+import EventEmitter from '../../utils/events';
 
 import Livechat from './Livechat';
 import Channel from './Channel';
-import Item from './Item';
+import Direct from './Direct';
 import SafeAreaView from '../../containers/SafeAreaView';
 import { goRoom } from '../../utils/goRoom';
 import Navigation from '../../lib/Navigation';
 
-const PERMISSION_EDIT_ROOM = 'edit-room';
 const getRoomTitle = (room, type, name, username, statusText, theme) => (type === 'd'
 	? (
 		<>
@@ -44,7 +42,7 @@ const getRoomTitle = (room, type, name, username, statusText, theme) => (type ==
 	)
 	: (
 		<View style={styles.roomTitleRow}>
-			<RoomTypeIcon type={room.prid ? 'discussion' : room.t} key='room-info-type' status={room.visitor?.status} theme={theme} />
+			<RoomTypeIcon type={room.prid ? 'discussion' : room.t} teamMain={room.teamMain} key='room-info-type' status={room.visitor?.status} />
 			<Text testID='room-info-view-name' style={[styles.roomTitle, { color: themes[theme].titleText }]} key='room-info-name'>{RocketChat.getRoomTitle(room)}</Text>
 		</View>
 	)
@@ -60,14 +58,11 @@ class RoomInfoView extends React.Component {
 	static propTypes = {
 		navigation: PropTypes.object,
 		route: PropTypes.object,
-		user: PropTypes.shape({
-			id: PropTypes.string,
-			token: PropTypes.string
-		}),
-		baseUrl: PropTypes.string,
 		rooms: PropTypes.array,
 		theme: PropTypes.string,
-		isMasterDetail: PropTypes.bool
+		isMasterDetail: PropTypes.bool,
+		jitsiEnabled: PropTypes.bool,
+		editRoomPermission: PropTypes.array
 	}
 
 	constructor(props) {
@@ -122,17 +117,21 @@ class RoomInfoView extends React.Component {
 		const rid = route.params?.rid;
 		const showCloseModal = route.params?.showCloseModal;
 		navigation.setOptions({
-			headerLeft: showCloseModal ? () => <CloseModalButton navigation={navigation} /> : undefined,
+			headerLeft: showCloseModal ? () => <HeaderButton.CloseModal navigation={navigation} /> : undefined,
 			title: t === 'd' ? I18n.t('User_Info') : I18n.t('Room_Info'),
 			headerRight: showEdit
 				? () => (
-					<CustomHeaderButtons>
-						<Item
+					<HeaderButton.Container>
+						<HeaderButton.Item
 							iconName='edit'
-							onPress={() => navigation.navigate(t === 'l' ? 'LivechatEditView' : 'RoomInfoEditView', { rid, room, roomUser })}
+							onPress={() => {
+								const isLivechat = t === 'l';
+								logEvent(events[`RI_GO_${ isLivechat ? 'LIVECHAT' : 'RI' }_EDIT`]);
+								navigation.navigate(isLivechat ? 'LivechatEditView' : 'RoomInfoEditView', { rid, room, roomUser });
+							}}
 							testID='room-info-view-edit-button'
 						/>
-					</CustomHeaderButtons>
+					</HeaderButton.Container>
 				)
 				: null
 		});
@@ -151,7 +150,7 @@ class RoomInfoView extends React.Component {
 	getRoleDescription = async(id) => {
 		const db = database.active;
 		try {
-			const rolesCollection = db.collections.get('roles');
+			const rolesCollection = db.get('roles');
 			const role = await rolesCollection.find(id);
 			if (role) {
 				return role.description;
@@ -182,11 +181,11 @@ class RoomInfoView extends React.Component {
 	}
 
 	loadUser = async() => {
-		const { room: roomState, roomUser } = this.state;
+		const { room, roomUser } = this.state;
 
-		if (_.isEmpty(roomUser)) {
+		if (isEmpty(roomUser)) {
 			try {
-				const roomUserId = RocketChat.getUidDirectMessage(roomState);
+				const roomUserId = RocketChat.getUidDirectMessage(room);
 				const result = await RocketChat.getUserInfo(roomUserId);
 				if (result.success) {
 					const { user } = result;
@@ -208,7 +207,8 @@ class RoomInfoView extends React.Component {
 	}
 
 	loadRoom = async() => {
-		const { route } = this.props;
+		const { room: roomState } = this.state;
+		const { route, editRoomPermission } = this.props;
 		let room = route.params?.room;
 		if (room && room.observe) {
 			this.roomObservable = room.observe();
@@ -221,29 +221,41 @@ class RoomInfoView extends React.Component {
 				const result = await RocketChat.getRoomInfo(this.rid);
 				if (result.success) {
 					({ room } = result);
-					this.setState({ room });
+					this.setState({ room: { ...roomState, ...room } });
 				}
 			} catch (e) {
 				log(e);
 			}
 		}
 
-		const permissions = await RocketChat.hasPermission([PERMISSION_EDIT_ROOM], room.rid);
-		if (permissions[PERMISSION_EDIT_ROOM] && !room.prid) {
+		const permissions = await RocketChat.hasPermission([editRoomPermission], room.rid);
+		if (permissions[0] && !room.prid) {
 			this.setState({ showEdit: true }, () => this.setHeader());
 		}
 	}
 
-	getDirect = async(username) => {
+	createDirect = () => new Promise(async(resolve, reject) => {
+		const { route } = this.props;
+
+		// We don't need to create a direct
+		const member = route.params?.member;
+		if (!isEmpty(member)) {
+			return resolve();
+		}
+
+		// TODO: Check if some direct with the user already exists on database
 		try {
+			const { roomUser: { username } } = this.state;
 			const result = await RocketChat.createDirectMessage(username);
 			if (result.success) {
-				return result.room;
+				const { room: { rid } } = result;
+				return this.setState(({ room }) => ({ room: { ...room, rid } }), resolve);
 			}
 		} catch {
 			// do nothing
 		}
-	}
+		reject();
+	})
 
 	removeRoom = async(rid, t) => {
 		try {
@@ -255,6 +267,7 @@ class RoomInfoView extends React.Component {
 	}
 
 	goRoom = () => {
+		logEvent(events.RI_GO_ROOM_USER);
 		const { roomUser, room } = this.state;
 		const { name, username } = roomUser;
 		const { rooms, navigation, isMasterDetail } = this.props;
@@ -287,32 +300,48 @@ class RoomInfoView extends React.Component {
 
 	videoCall = () => {
 		const { room } = this.state;
-		RocketChat.callJitsi(room.rid);
+		RocketChat.callJitsi(room);
 	}
 
 	renderAvatar = (room, roomUser) => {
-		const { baseUrl, user, theme } = this.props;
+		const { theme } = this.props;
 
 		return (
 			<Avatar
 				text={room.name || roomUser.username}
-				size={100}
 				style={styles.avatar}
 				type={this.t}
-				baseUrl={baseUrl}
-				userId={user.id}
-				token={user.token}
+				size={100}
+				rid={room?.rid}
 			>
-				{this.t === 'd' && roomUser._id ? <Status style={[sharedStyles.status, styles.status]} theme={theme} size={24} id={roomUser._id} /> : null}
+				{this.t === 'd' && roomUser._id
+					? (
+						<View style={[sharedStyles.status, { backgroundColor: themes[theme].auxiliaryBackground }]}>
+							<Status size={20} id={roomUser._id} />
+						</View>
+					)
+					: null}
 			</Avatar>
 		);
 	}
 
 	renderButton = (onPress, iconName, text) => {
 		const { theme } = this.props;
+
+		const onActionPress = async() => {
+			try {
+				if (this.isDirect) {
+					await this.createDirect();
+				}
+				onPress();
+			} catch {
+				EventEmitter.emit(LISTENER, { message: I18n.t('error-action-not-allowed', { action: I18n.t('Create_Direct_Messages') }) });
+			}
+		};
+
 		return (
 			<BorderlessButton
-				onPress={onPress}
+				onPress={onActionPress}
 				style={styles.roomButton}
 			>
 				<CustomIcon
@@ -325,12 +354,15 @@ class RoomInfoView extends React.Component {
 		);
 	}
 
-	renderButtons = () => (
-		<View style={styles.roomButtonsContainer}>
-			{this.renderButton(this.goRoom, 'message', I18n.t('Message'))}
-			{this.renderButton(this.videoCall, 'video-1', I18n.t('Video_call'))}
-		</View>
-	)
+	renderButtons = () => {
+		const { jitsiEnabled } = this.props;
+		return (
+			<View style={styles.roomButtonsContainer}>
+				{this.renderButton(this.goRoom, 'message', I18n.t('Message'))}
+				{jitsiEnabled && this.isDirect ? this.renderButton(this.videoCall, 'camera', I18n.t('Video_call')) : null}
+			</View>
+		);
+	}
 
 	renderContent = () => {
 		const {
@@ -403,10 +435,10 @@ class RoomInfoView extends React.Component {
 					theme={theme}
 					testID='room-info-view'
 				>
-					<View style={[styles.avatarContainer, this.isDirect && styles.avatarContainerDirectRoom, { backgroundColor: themes[theme].auxiliaryBackground }]}>
+					<View style={[styles.avatarContainer, { backgroundColor: themes[theme].auxiliaryBackground }]}>
 						{this.renderAvatar(room, roomUser)}
 						<View style={styles.roomTitleContainer}>{ getRoomTitle(room, this.t, roomUser?.name, roomUser?.username, roomUser?.statusText, theme) }</View>
-						{this.isDirect ? this.renderButtons() : null}
+						{this.renderButtons()}
 					</View>
 					{this.renderContent()}
 				</SafeAreaView>
@@ -416,10 +448,10 @@ class RoomInfoView extends React.Component {
 }
 
 const mapStateToProps = state => ({
-	baseUrl: state.server.server,
-	user: getUserSelector(state),
 	rooms: state.room.rooms,
-	isMasterDetail: state.app.isMasterDetail
+	isMasterDetail: state.app.isMasterDetail,
+	jitsiEnabled: state.settings.Jitsi_Enabled || false,
+	editRoomPermission: state.permissions['edit-room']
 });
 
 export default connect(mapStateToProps)(withTheme(RoomInfoView));

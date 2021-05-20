@@ -11,7 +11,16 @@ import protectedFunction from './helpers/protectedFunction';
 import fetch from '../../utils/fetch';
 import { DEFAULT_AUTO_LOCK } from '../../constants/localAuthentication';
 
-const serverInfoKeys = ['Site_Name', 'UI_Use_Real_Name', 'FileUpload_MediaTypeWhiteList', 'FileUpload_MaxFileSize', 'Force_Screen_Lock', 'Force_Screen_Lock_After'];
+const serverInfoKeys = [
+	'Site_Name',
+	'UI_Use_Real_Name',
+	'FileUpload_MediaTypeWhiteList',
+	'FileUpload_MaxFileSize',
+	'Force_Screen_Lock',
+	'Force_Screen_Lock_After',
+	'uniqueID',
+	'E2E_Enable'
+];
 
 // these settings are used only on onboarding process
 const loginSettings = [
@@ -35,7 +44,7 @@ const loginSettings = [
 const serverInfoUpdate = async(serverInfo, iconSetting) => {
 	const serversDB = database.servers;
 	const serverId = reduxStore.getState().server.server;
-	const serversCollection = serversDB.collections.get('servers');
+	const serversCollection = serversDB.get('servers');
 	const server = await serversCollection.find(serverId);
 
 	let info = serverInfo.reduce((allSettings, setting) => {
@@ -67,6 +76,12 @@ const serverInfoUpdate = async(serverInfo, iconSetting) => {
 			if (setting.valueAsNumber > 0 && forceScreenLock) {
 				return { ...allSettings, autoLockTime: setting.valueAsNumber };
 			}
+		}
+		if (setting._id === 'uniqueID') {
+			return { ...allSettings, uniqueID: setting.valueAsString };
+		}
+		if (setting._id === 'E2E_Enable') {
+			return { ...allSettings, E2E_Enable: setting.valueAsBoolean };
 		}
 		return allSettings;
 	}, {});
@@ -103,7 +118,7 @@ export async function getLoginSettings({ server }) {
 
 export async function setSettings() {
 	const db = database.active;
-	const settingsCollection = db.collections.get('settings');
+	const settingsCollection = db.get('settings');
 	const settingsRecords = await settingsCollection.query().fetch();
 	const parsed = Object.values(settingsRecords).map(item => ({
 		_id: item.id,
@@ -135,10 +150,14 @@ export default async function() {
 		// filter server info
 		const serverInfo = filteredSettings.filter(i1 => serverInfoKeys.includes(i1._id));
 		const iconSetting = data.find(item => item._id === 'Assets_favicon_512');
-		await serverInfoUpdate(serverInfo, iconSetting);
+		try {
+			await serverInfoUpdate(serverInfo, iconSetting);
+		} catch {
+			// Server not found
+		}
 
 		await db.action(async() => {
-			const settingsCollection = db.collections.get('settings');
+			const settingsCollection = db.get('settings');
 			const allSettingsRecords = await settingsCollection
 				.query(Q.where('id', Q.oneOf(filteredSettingsIds)))
 				.fetch();

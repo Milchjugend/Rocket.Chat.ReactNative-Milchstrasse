@@ -1,20 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { View, FlatList } from 'react-native';
 import { connect } from 'react-redux';
-import equal from 'deep-equal';
-import { orderBy } from 'lodash';
+import orderBy from 'lodash/orderBy';
 import { Q } from '@nozbe/watermelondb';
+import * as List from '../containers/List';
 
 import database from '../lib/database';
 import RocketChat from '../lib/rocketchat';
 import UserItem from '../presentation/UserItem';
 import Loading from '../containers/Loading';
 import I18n from '../i18n';
-import log from '../utils/log';
+import log, { logEvent, events } from '../utils/log';
 import SearchBox from '../containers/SearchBox';
 import sharedStyles from './Styles';
-import { Item, CustomHeaderButtons } from '../containers/HeaderButton';
+import * as HeaderButton from '../containers/HeaderButton';
 import StatusBar from '../containers/StatusBar';
 import { themes } from '../constants/colors';
 import { animateNextTransition } from '../utils/layoutAnimation';
@@ -27,12 +27,6 @@ import {
 } from '../actions/selectedUsers';
 import { showErrorAlert } from '../utils/info';
 import SafeAreaView from '../containers/SafeAreaView';
-
-const styles = StyleSheet.create({
-	separator: {
-		marginLeft: 60
-	}
-});
 
 class SelectedUsersView extends React.Component {
 	static propTypes = {
@@ -70,27 +64,6 @@ class SelectedUsersView extends React.Component {
 		this.setHeader(props.route.params?.showButton);
 	}
 
-	shouldComponentUpdate(nextProps, nextState) {
-		const { search, chats } = this.state;
-		const { users, loading, theme } = this.props;
-		if (nextProps.theme !== theme) {
-			return true;
-		}
-		if (nextProps.loading !== loading) {
-			return true;
-		}
-		if (!equal(nextProps.users, users)) {
-			return true;
-		}
-		if (!equal(nextState.search, search)) {
-			return true;
-		}
-		if (!equal(nextState.chats, chats)) {
-			return true;
-		}
-		return false;
-	}
-
 	componentDidUpdate(prevProps) {
 		if (this.isGroupChat()) {
 			const { users } = this.props;
@@ -119,9 +92,9 @@ class SelectedUsersView extends React.Component {
 			title,
 			headerRight: () => (
 				(!maxUsers || showButton) && (
-					<CustomHeaderButtons>
-						<Item title={buttonText} onPress={nextAction} testID='selected-users-view-submit' />
-					</CustomHeaderButtons>
+					<HeaderButton.Container>
+						<HeaderButton.Item title={buttonText} onPress={nextAction} testID='selected-users-view-submit' />
+					</HeaderButton.Container>
 				)
 			)
 		};
@@ -183,9 +156,10 @@ class SelectedUsersView extends React.Component {
 			if (this.isGroupChat() && users.length === maxUsers) {
 				return showErrorAlert(I18n.t('Max_number_of_users_allowed_is_number', { maxUsers }), I18n.t('Oops'));
 			}
-
+			logEvent(events.SELECTED_USERS_ADD_USER);
 			addUser(user);
 		} else {
+			logEvent(events.SELECTED_USERS_REMOVE_USER);
 			removeUser(user);
 		}
 	}
@@ -246,11 +220,6 @@ class SelectedUsersView extends React.Component {
 		);
 	}
 
-	renderSeparator = () => {
-		const { theme } = this.props;
-		return <View style={[sharedStyles.separator, styles.separator, { backgroundColor: themes[theme].separatorColor }]} />;
-	}
-
 	renderItem = ({ item, index }) => {
 		const { search, chats } = this.state;
 		const { baseUrl, user, theme } = this.props;
@@ -296,7 +265,7 @@ class SelectedUsersView extends React.Component {
 				extraData={this.props}
 				keyExtractor={item => item._id}
 				renderItem={this.renderItem}
-				ItemSeparatorComponent={this.renderSeparator}
+				ItemSeparatorComponent={List.Separator}
 				ListHeaderComponent={this.renderHeader}
 				contentContainerStyle={{ backgroundColor: themes[theme].backgroundColor }}
 				enableEmptySections
@@ -306,10 +275,10 @@ class SelectedUsersView extends React.Component {
 	}
 
 	render = () => {
-		const { loading, theme } = this.props;
+		const { loading } = this.props;
 		return (
-			<SafeAreaView testID='select-users-view' theme={theme}>
-				<StatusBar theme={theme} />
+			<SafeAreaView testID='select-users-view'>
+				<StatusBar />
 				{this.renderList()}
 				<Loading visible={loading} />
 			</SafeAreaView>
