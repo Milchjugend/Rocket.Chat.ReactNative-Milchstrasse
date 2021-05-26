@@ -1,4 +1,4 @@
-package ch.milchjugend.milchstrasse.generated;
+package chat.rocket.reactnative.generated;
 
 import java.util.Arrays;
 import java.util.List;
