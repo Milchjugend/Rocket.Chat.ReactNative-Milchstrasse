@@ -15,7 +15,6 @@
 		android:networkSecurityConfig="@xml/network_security_config"
 		android:requestLegacyExternalStorage="true"
 		android:supportsRtl="true"
-		android:theme="@style/AppTheme"
 		tools:replace="android:allowBackup">
 		<activity
       android:name="com.zoontek.rnbootsplash.RNBootSplashActivity"
@@ -71,8 +70,7 @@
 				android:name=".share.ShareActivity"
 				android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
 				android:label="@string/share_extension_name"
-				android:screenOrientation="portrait"
-				android:theme="@style/AppTheme" >
+				android:screenOrientation="portrait">
 				<intent-filter>
 					<action android:name="android.intent.action.SEND" />
 					<action android:name="android.intent.action.SEND_MULTIPLE" />
