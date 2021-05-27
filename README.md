@@ -28,57 +28,6 @@ Who run the world? Queers!
 
 ## Eigene App für Milchstrasse erstellen
 
-Follow the [React Native Getting Started Guide](https://facebook.github.io/react-native/docs/getting-started.html) for detailed instructions on setting up your local machine for development.
+Der Milchstrasse-Server auf chat.milchjugend.ch ist eine Instanz von Rocket.chat ohne Änderungen am Source Code. Ihr könnt die ganze API verwenden, bots programmieren oder eine eigene App dafür entwickeln. 
 
-## How to run
-- Clone repository and install dependencies:
-    ```bash
-    $ git clone git@github.com:RocketChat/Rocket.Chat.ReactNative.git
-    $ cd Rocket.Chat.ReactNative
-    $ yarn
-    ```
-
-- Run application
-    ```bash
-    $ npx react-native run-ios
-    ```
-    ```bash
-    $ npx react-native run-android
-    ```
-
-
-## Engage with us
-### Share your story
-We’d love to hear about [your experience](https://survey.zohopublic.com/zs/e4BUFG) and potentially feature it on our [blog](https://rocket.chat/case-studies/?utm_source=github&utm_medium=readme&utm_campaign=community).
-
-### Subscribe for Updates
-Once a month our marketing team releases an email update with news about product releases, company related topics, events and use cases. [Sign up!](https://rocket.chat/newsletter/?utm_source=github&utm_medium=readme&utm_campaign=community)
-
-- Run tests
-
-```bash
-$ npx detox test ./e2e/tests/onboarding --configuration ios.sim.release
-$ npx detox test ./e2e/tests/room --configuration ios.sim.release
-$ npx detox test ./e2e/tests/assorted --configuration ios.sim.release
-```
-
-## Storybook
-- Open index.js
-
-- Uncomment following line
-
-```bash
-import './storybook';
-```
-
-- Comment out following lines
-```bash
-import './app/ReactotronConfig';
-import { AppRegistry } from 'react-native';
-import App from './app/index';
-import { name as appName } from './app.json';
-
-AppRegistry.registerComponent(appName, () => App);
-```
-
-- Start your application again
+Auch sind wir offen für weitere Contributors, melde Dich beim Maintainer!
