@@ -11,6 +11,8 @@
     "ios": "npx react-native run-ios",
     "android": "npx react-native run-android --variant=experimentalPlayDebug",
     "android-whitelabel": "npx react-native run-android --main-activity chat.rocket.reactnative.MainActivity --variant=experimentalPlayDebug --appId",
+    "debug-build-android": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/ && cd android && ./gradlew assembleDebug && cd ..",
+    "release-build": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/build/intermediates/res/merged/release/ && rm -rf android/app/src/main/res/drawable-* && rm -rf android/app/src/main/res/raw/* && cd android && ./gradlew assembleRelease && cd ..",
     "log-android": "react-native log-android",
     "snyk-protect": "snyk protect",
     "precommit": "eslint . && jest",
@@ -161,6 +163,7 @@
     "otp.js": "1.2.0",
     "patch-package": "6.2.2",
     "react-dom": "16.13.1",
+    "react-native-clean-project": "^3.6.4",
     "react-test-renderer": "16.13.1",
     "reactotron-redux": "3.1.3",
     "reactotron-redux-saga": "4.2.3"

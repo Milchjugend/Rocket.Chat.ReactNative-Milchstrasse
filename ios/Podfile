@@ -68,6 +68,11 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
     end
+    if ['react-native-simple-crypto'].include? target.name
+          target.build_configurations.each do |config|
+            config.build_settings['SWIFT_VERSION'] = '5'
+          end
+        end
   end
   flipper_post_install(installer)
 end

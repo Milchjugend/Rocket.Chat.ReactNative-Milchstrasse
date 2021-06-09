@@ -12,3 +12,4 @@
 #import <react-native-simple-crypto/Aes.h>
 #import <react-native-simple-crypto/Rsa.h>
 #import <react-native-simple-crypto/Shared.h>
+#import "React/RCTFont.h"

@@ -310,7 +310,7 @@ const AgendaStackNavigator = () => {
 	);
 };
 
-// AgendaStackNavigator
+// CommunityStackNavigator
 const CommunityStack = createStackNavigator();
 const CommunityStackNavigator = () => {
 	const { theme } = React.useContext(ThemeContext);

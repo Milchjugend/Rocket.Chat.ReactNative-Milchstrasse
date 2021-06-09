@@ -130,6 +130,7 @@ class Sidebar extends Component {
 
 	onPressCommunity = () => {
 		const { navigation } = this.props;
+		console.log('community navidgation', navigation);
 		navigation.navigate('CommunityView', { title: I18n.t('Community') });
 	}
 
@@ -139,6 +140,7 @@ class Sidebar extends Component {
 	}
 
 	sidebarNavigate = (route) => {
+		console.log('route', route);
 		logEvent(events[`SIDEBAR_GO_${ route.replace('StackNavigator', '').replace('View', '').toUpperCase() }`]);
 		Navigation.navigate(route);
 	}
@@ -189,7 +191,7 @@ class Sidebar extends Component {
 				/>
 				<SidebarItem
 					text={I18n.t('Channel_Directory')}
-					left={<CustomIcon name='hash' size={20} color={themes[theme].titleText} />}
+					left={<CustomIcon name='channel-public' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('DirectoryView')}
 					testID='sidebar-channels'
 					current={this.currentItemKey === 'ChannelDirectoryStack'}

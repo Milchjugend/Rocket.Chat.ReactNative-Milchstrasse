@@ -1,7 +1,7 @@
 {
   "project_info": {
     "project_number": "1018244327953",
-    "firebase_url": "https://milchstrasse-milchjugend.firebaseio.com/",
+    "firebase_url": "https://milchstrasse-milchjugend.firebaseio.com",
     "project_id": "milchstrasse-milchjugend",
     "storage_bucket": "milchstrasse-milchjugend.appspot.com"
   },
@@ -30,6 +30,13 @@
             {
               "client_id": "1018244327953-kc6tpjgjidcgikgp61m19bco1tgg8ab8.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1018244327953-2sfbc6t7ahqumles1diun7b6aqopj9hi.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "ch.milchjugend.milchstrasse"
+              }
             }
           ]
         }

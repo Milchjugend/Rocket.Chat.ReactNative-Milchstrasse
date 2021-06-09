@@ -1,18 +1,19 @@
 import React from 'react';
 import {
-	View, SafeAreaView, Text
+	View, Text
 } from 'react-native';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 import { toggleCrashReport as toggleCrashReportAction } from '../../actions/crashReport';
-import { CloseModalButton, DrawerButton } from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
 import BrowserView from '../../containers/BrowserView';
+import SafeAreaView from '../../containers/SafeAreaView';
 import styles from './styles';
 
 import I18n from '../../i18n';
 import { withTheme } from '../../theme';
+import * as HeaderButton from "../../containers/HeaderButton";
 
 const ItemInfo = React.memo(({ info }) => (
 	<View style={styles.infoContainer}>
@@ -25,13 +26,9 @@ ItemInfo.propTypes = {
 
 class CommunityView extends React.Component {
 	static navigationOptions = ({ navigation, isMasterDetail }) => ({
-		headerLeft: () => (isMasterDetail ? (
-			<CloseModalButton navigation={navigation} testID='settings-view-close' />
-		) : (
-			<DrawerButton navigation={navigation} />
-		)),
+		headerLeft: isMasterDetail ? undefined : () => <HeaderButton.Drawer navigation={navigation} testID='settings-view-close'/>,
 		title: I18n.t('Community')
-	});
+	})
 
 	static propTypes = {
 		theme: PropTypes.string

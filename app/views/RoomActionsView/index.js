@@ -174,8 +174,8 @@ class RoomActionsView extends React.Component {
 				navigation.navigate(item.route, item.params);
 			}
 		}
-		if (event) {
-			return event();
+		if (item.event) {
+			return item.event();
 		}
 	}
 

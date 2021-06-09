@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-	View, SafeAreaView, Text
+	View, Text
 } from 'react-native';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
@@ -9,6 +9,7 @@ import { toggleCrashReport as toggleCrashReportAction } from '../../actions/cras
 
 import StatusBar from '../../containers/StatusBar';
 import BrowserView from '../../containers/BrowserView';
+import SafeAreaView from '../../containers/SafeAreaView';
 
 import { withTheme } from '../../theme';
 
