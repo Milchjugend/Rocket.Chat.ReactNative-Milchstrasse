@@ -196,9 +196,8 @@ class RoomInfoView extends React.Component {
 							return description;
 						}));
 					}
-
-					const room = await this.getDirect(user.username);
-					this.setState({ roomUser: user, room: { ...roomState, rid: room._id, msgs: room.msgs } });
+					this.setState({ roomUser: user });
+					// this.setState({ roomUser: user, room: { ...roomState, rid: room._id, msgs: room.msgs } });
 				}
 			} catch {
 				// do nothing
@@ -371,37 +370,38 @@ class RoomInfoView extends React.Component {
 		const { theme } = this.props;
 
 		if (this.isDirect) {
-			return (
-				<>
-					<WebView
-						source={{ uri: `https://app.milchjugend.ch/members/${ roomUser.username }/?minimal=true` }}
-						style={{ height: webViewHeight }}
-						javaScriptEnabled
-						scrollEnabled={false}
-						onMessage={this.onMessage}
-						injectedJavaScript={script}
-						onLoadStart={() => (this.showSpinner())}
-						onLoad={() => this.hideSpinner()}
-						ref={this.webview}
-						// onNavigationStateChange={this.handleNavigationStateChange}
-					/>
-					{webViewLoading && (
-						<ActivityIndicator
-							style={{
-								flex: 1,
-								left: 0,
-								right: 0,
-								top: 0,
-								bottom: 0,
-								position: 'relative',
-								alignItems: 'center',
-								justifyContent: 'center'
-							}}
-							size='large'
-						/>
-					)}
-				</>
-			);
+			return <Direct roomUser={roomUser} theme={theme} />;
+			// return (
+			// 	<>
+			// 		<WebView
+			// 			source={{ uri: `https://app.milchjugend.ch/members/${roomUser.username}/?minimal=true` }}
+			// 			style={{ height: webViewHeight }}
+			// 			javaScriptEnabled
+			// 			scrollEnabled={false}
+			// 			onMessage={() => {}}
+			// 			injectedJavaScript={script}
+			// 			onLoadStart={() => (this.showSpinner())}
+			// 			onLoad={() => this.hideSpinner()}
+			// 			ref={this.webview}
+			// 			// onNavigationStateChange={this.handleNavigationStateChange}
+			// 		/>
+			// 		{webViewLoading && (
+			// 			<ActivityIndicator
+			// 				style={{
+			// 					flex: 1,
+			// 					left: 0,
+			// 					right: 0,
+			// 					top: 0,
+			// 					bottom: 0,
+			// 					position: 'relative',
+			// 					alignItems: 'center',
+			// 					justifyContent: 'center'
+			// 				}}
+			// 				size='large'
+			// 			/>
+			// 		)}
+			// 	</>
+			// );
 		} else if (this.t === 'l') {
 			return <Livechat room={room} roomUser={roomUser} theme={theme} />;
 		}
