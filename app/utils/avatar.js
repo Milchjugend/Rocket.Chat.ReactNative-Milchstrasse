@@ -1,20 +1,18 @@
-import semver from 'semver';
+import { compareServerVersion, methods } from '../lib/utils';
 
 const formatUrl = (url, size, query) => `${ url }?format=png&size=${ size }${ query }`;
 
 export const avatarURL = ({
-	type, text, size, user = {}, avatar, server, avatarETag, rid, blockUnauthenticatedAccess, serverVersion
+	type, text, size = 25, user = {}, avatar, server, avatarETag, rid, blockUnauthenticatedAccess, serverVersion
 }) => {
 	let room;
 	if (type === 'd') {
 		room = text;
-	} else if (rid && !(serverVersion && semver.lt(semver.coerce(serverVersion), '3.6.0'))) {
+	} else if (rid && !(compareServerVersion(serverVersion, '3.6.0', methods.lowerThan))) {
 		room = `room/${ rid }`;
 	} else {
 		room = `@${ text }`;
 	}
-
-	const uriSize = size > 100 ? size : 100;
 
 	const { id, token } = user;
 	let query = '';
@@ -30,8 +28,8 @@ export const avatarURL = ({
 			return avatar;
 		}
 
-		return formatUrl(`${ server }${ avatar }`, uriSize, query);
+		return formatUrl(`${ server }${ avatar }`, size, query);
 	}
 
-	return formatUrl(`${ server }/avatar/${ room }`, uriSize, query);
+	return formatUrl(`${ server }/avatar/${ room }`, size, query);
 };

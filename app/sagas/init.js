@@ -28,21 +28,19 @@ export const initLocalSettings = function* initLocalSettings() {
 
 const restore = function* restore() {
 	try {
-		const { token, server } = yield all({
-			token: UserPreferences.getStringAsync(RocketChat.TOKEN_KEY),
-			server: UserPreferences.getStringAsync(RocketChat.CURRENT_SERVER)
-		});
+		const { server } = appConfig;
+		const userId = yield UserPreferences.getStringAsync(`${ RocketChat.TOKEN_KEY }-${ server }`);
 
-		if (!token || !server) {
+		if (!userId) {
 			yield all([
 				UserPreferences.removeItem(RocketChat.TOKEN_KEY),
 				UserPreferences.removeItem(RocketChat.CURRENT_SERVER)
 			]);
 			yield put(serverRequest(appConfig.server));
-			// yield put(appStart({ root: ROOT_OUTSIDE }));
+			yield put(appStart({ root: ROOT_OUTSIDE }));
 		} else {
 			const serversDB = database.servers;
-			const serverCollections = serversDB.collections.get('servers');
+			const serverCollections = serversDB.get('servers');
 
 			let serverObj;
 			try {

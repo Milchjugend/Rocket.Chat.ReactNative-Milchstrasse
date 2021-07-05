@@ -2,7 +2,8 @@ import { put, takeLatest } from 'redux-saga/effects';
 import { Alert } from 'react-native';
 import { sanitizedRaw } from '@nozbe/watermelondb/RawRecord';
 import { Q } from '@nozbe/watermelondb';
-import semver from 'semver';
+import valid from 'semver/functions/valid';
+import coerce from 'semver/functions/coerce';
 
 import Navigation from '../lib/Navigation';
 import { SERVER } from '../actions/actionsTypes';
@@ -39,13 +40,13 @@ const getServerInfo = function* getServerInfo({ server, raiseError = true }) {
 			return;
 		}
 
-		let serverVersion = semver.valid(serverInfo.version);
+		let serverVersion = valid(serverInfo.version);
 		if (!serverVersion) {
-			({ version: serverVersion } = semver.coerce(serverInfo.version));
+			({ version: serverVersion } = coerce(serverInfo.version));
 		}
 
 		const serversDB = database.servers;
-		const serversCollection = serversDB.collections.get('servers');
+		const serversCollection = serversDB.get('servers');
 		yield serversDB.action(async() => {
 			try {
 				const serverRecord = await serversCollection.find(server);
@@ -77,7 +78,7 @@ const handleSelectServer = function* handleSelectServer({ server, version, fetch
 		const serversDB = database.servers;
 		yield UserPreferences.setStringAsync(RocketChat.CURRENT_SERVER, server);
 		const userId = yield UserPreferences.getStringAsync(`${ RocketChat.TOKEN_KEY }-${ server }`);
-		const userCollections = serversDB.collections.get('users');
+		const userCollections = serversDB.get('users');
 		let user = null;
 		if (userId) {
 			try {
@@ -123,6 +124,7 @@ const handleSelectServer = function* handleSelectServer({ server, version, fetch
 		// and block the selectServerSuccess raising multiples errors
 		RocketChat.setSettings();
 		RocketChat.setCustomEmojis();
+		RocketChat.setPermissions();
 		RocketChat.setEnterpriseModules();
 
 		let serverInfo;
@@ -150,7 +152,7 @@ const handleServerRequest = function* handleServerRequest({ server, username, fr
 
 		const serverInfo = yield getServerInfo({ server });
 		const serversDB = database.servers;
-		const serversHistoryCollection = serversDB.collections.get('servers_history');
+		const serversHistoryCollection = serversDB.get('servers_history');
 
 		if (serverInfo) {
 			yield RocketChat.getLoginServices(server);

@@ -2,11 +2,7 @@ import {
 	put, call, takeLatest, select, take, fork, cancel, race, delay
 } from 'redux-saga/effects';
 import { sanitizedRaw } from '@nozbe/watermelondb/RawRecord';
-import moment from 'moment';
-import 'moment/min/locales';
 import { Q } from '@nozbe/watermelondb';
-import { I18nManager } from 'react-native';
-
 import * as types from '../actions/actionsTypes';
 // import { appStart } from '../actions';
 import { serverFinishAdd, serverRequest } from '../actions/server';
@@ -18,10 +14,9 @@ import {
 	loginFailure, loginSuccess, setUser, logout
 } from '../actions/login';
 import { roomsRequest } from '../actions/rooms';
-import { toMomentLocale } from '../utils/moment';
 import RocketChat from '../lib/rocketchat';
 import log, { logEvent, events } from '../utils/log';
-import I18n, { LANGUAGES, isRTL } from '../i18n';
+import I18n, { setLanguage } from '../i18n';
 import database from '../lib/database';
 import EventEmitter from '../utils/events';
 import { inviteLinksRequest } from '../actions/inviteLinks';
@@ -34,7 +29,7 @@ import UserPreferences from '../lib/userPreferences';
 
 import { inquiryRequest, inquiryReset } from '../ee/omnichannel/actions/inquiry';
 import { isOmnichannelStatusAvailable } from '../ee/omnichannel/lib';
-import Navigation from '../lib/Navigation';
+// import Navigation from '../lib/Navigation';
 
 const getServer = state => state.server.server;
 const loginWithPasswordCall = args => RocketChat.loginWithPassword(args);
@@ -60,7 +55,7 @@ const handleLoginRequest = function* handleLoginRequest({ credentials, logoutOnE
 
 			// Saves username on server history
 			const serversDB = database.servers;
-			const serversHistoryCollection = serversDB.collections.get('servers_history');
+			const serversHistoryCollection = serversDB.get('servers_history');
 			yield serversDB.action(async() => {
 				try {
 					const serversHistory = await serversHistoryCollection.query(Q.where('url', server)).fetch();
@@ -129,7 +124,6 @@ const fetchRooms = function* fetchRooms() {
 const handleLoginSuccess = function* handleLoginSuccess({ user }) {
 	try {
 		const adding = yield select(state => state.server.adding);
-		yield UserPreferences.setStringAsync(RocketChat.TOKEN_KEY, user.token);
 
 		RocketChat.getUserPresence(user.id);
 
@@ -144,11 +138,10 @@ const handleLoginSuccess = function* handleLoginSuccess({ user }) {
 		yield fork(fetchEnterpriseModules, { user });
 		yield put(encryptionInit());
 
-		I18n.locale = user.language;
-		moment.locale(toMomentLocale(user.language));
+		setLanguage(user?.language);
 
 		const serversDB = database.servers;
-		const usersCollection = serversDB.collections.get('users');
+		const usersCollection = serversDB.get('users');
 		const u = {
 			token: user.token,
 			username: user.username,
@@ -214,6 +207,7 @@ const handleLogout = function* handleLogout({ forcedByServer }) {
 		try {
 			yield call(logoutCall, { server });
 			yield put(appStart({ root: ROOT_OUTSIDE }));
+			yield put(serverRequest(appConfig.server));
 
 			// if the user was logged out by the server
 			if (forcedByServer) {
@@ -222,27 +216,7 @@ const handleLogout = function* handleLogout({ forcedByServer }) {
 				// Navigation.navigate('NewServerView');
 				// yield delay(300);
 				// EventEmitter.emit('NewServer', { server });
-				yield put(serverRequest(appConfig.server));
-			} else {
-				yield put(serverRequest(appConfig.server));
-				// const serversDB = database.servers;
-				// // all servers
-				// const serversCollection = serversDB.collections.get('servers');
-				// const servers = yield serversCollection.query().fetch();
-
-				// // see if there're other logged in servers and selects first one
-				// if (servers.length > 0) {
-				// 	for (let i = 0; i < servers.length; i += 1) {
-				// 		const newServer = servers[i].id;
-				// 		const token = yield UserPreferences.getStringAsync(`${ RocketChat.TOKEN_KEY }-${ newServer }`);
-				// 		if (token) {
-				// 			yield put(selectServerRequest(newServer));
-				// 			return;
-				// 		}
-				// 	}
-				// }
-				// // if there's no servers, go outside
-				// yield put(appStart({ root: ROOT_OUTSIDE }));
+				// yield put(serverRequest(appConfig.server));
 			}
 		} catch (e) {
 			yield put(appStart({ root: ROOT_OUTSIDE }));
@@ -252,13 +226,7 @@ const handleLogout = function* handleLogout({ forcedByServer }) {
 };
 
 const handleSetUser = function* handleSetUser({ user }) {
-	if (user && user.language) {
-		const locale = LANGUAGES.find(l => l.value.toLowerCase() === user.language)?.value || user.language;
-		I18n.locale = locale;
-		I18nManager.forceRTL(isRTL(locale));
-		I18nManager.swapLeftAndRightInRTL(isRTL(locale));
-		moment.locale(toMomentLocale(locale));
-	}
+	setLanguage(user?.language);
 
 	if (user && user.status) {
 		const userId = yield select(state => state.login.user.id);
