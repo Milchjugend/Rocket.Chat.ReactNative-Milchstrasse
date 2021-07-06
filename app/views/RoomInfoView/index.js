@@ -29,8 +29,7 @@ import EventEmitter from '../../utils/events';
 
 import Livechat from './Livechat';
 import Channel from './Channel';
-// import Item from './Item';
-// import Direct from './Direct';
+
 import SafeAreaView from '../../containers/SafeAreaView';
 import { goRoom } from '../../utils/goRoom';
 import Navigation from '../../lib/Navigation';
@@ -53,7 +52,7 @@ const getRoomTitle = (room, type, name, username, statusText, theme) => (type ==
 
 const script = `
     window.ReactNativeWebView.postMessage(
-      Math.max(document.documentElement.clientHeight, document.documentElement.scrollHeight, document.body.clientHeight, document.body.scrollHeight)
+      Math.max(document.documentElement.clientHeight, document.documentElement.scrollHeight, document.body.clientHeight, document.body.scrollHeight).toString()
     );
 `;
 
@@ -76,8 +75,8 @@ class RoomInfoView extends React.Component {
 		this.t = props.route.params?.t;
 		this.state = {
 			room: room || { rid: this.rid, t: this.t },
-			webViewHeight: 0,
-			webViewLoading: true,
+			webViewHeight: 300,
+			webViewLoading: false,
 			roomUser: roomUser || {},
 			showEdit: false
 		};
@@ -378,27 +377,26 @@ class RoomInfoView extends React.Component {
 					<WebView
 						source={{ uri: `https://app.milchjugend.ch/members/${ roomUser.username }/?minimal=true` }}
 						style={{ height: webViewHeight }}
-						javaScriptEnabled
 						scrollEnabled={false}
 						onMessage={this.onMessage}
 						injectedJavaScript={script}
 						onLoadStart={() => (this.showSpinner())}
 						onLoad={() => this.hideSpinner()}
 						ref={this.webview}
-						// onNavigationStateChange={this.handleNavigationStateChange}
 					/>
 					{webViewLoading && (
 						<ActivityIndicator
 							style={{
-								flex: 1,
 								left: 0,
 								right: 0,
 								top: 0,
 								bottom: 0,
-								position: 'relative',
+								position: 'absolute',
 								alignItems: 'center',
-								justifyContent: 'center'
+								justifyContent: 'center',
+								backgroundColor: 'rgba(52, 52, 52, 0.5)'
 							}}
+							color='white'
 							size='large'
 						/>
 					)}
