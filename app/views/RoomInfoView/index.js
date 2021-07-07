@@ -51,9 +51,9 @@ const getRoomTitle = (room, type, name, username, statusText, theme) => (type ==
 );
 
 const script = `
-    window.ReactNativeWebView.postMessage(
-      Math.max(document.documentElement.clientHeight, document.documentElement.scrollHeight, document.body.clientHeight, document.body.scrollHeight).toString()
-    );
+	window.ReactNativeWebView.postMessage(
+		Math.max(document.documentElement.clientHeight, document.documentElement.scrollHeight, document.body.clientHeight, document.body.scrollHeight).toString()
+	);
 `;
 
 class RoomInfoView extends React.Component {
@@ -75,7 +75,7 @@ class RoomInfoView extends React.Component {
 		this.t = props.route.params?.t;
 		this.state = {
 			room: room || { rid: this.rid, t: this.t },
-			webViewHeight: 300,
+			webViewHeight: 350,
 			webViewLoading: false,
 			roomUser: roomUser || {},
 			showEdit: false
@@ -393,10 +393,9 @@ class RoomInfoView extends React.Component {
 								bottom: 0,
 								position: 'absolute',
 								alignItems: 'center',
-								justifyContent: 'center',
-								backgroundColor: 'rgba(52, 52, 52, 0.5)'
+								justifyContent: 'center'
 							}}
-							color='white'
+							color='gray'
 							size='large'
 						/>
 					)}
