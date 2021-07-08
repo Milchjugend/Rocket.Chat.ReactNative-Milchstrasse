@@ -6,7 +6,7 @@ import {
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
 import moment from 'moment';
-import equal from 'deep-equal';
+import { dequal } from 'dequal';
 import { activateKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 
 import Touchable from './Touchable';
@@ -79,7 +79,7 @@ const Button = React.memo(({
 		{
 			loading
 				? <ActivityIndicator style={[styles.playPauseButton, styles.audioLoading]} theme={theme} />
-				: <CustomIcon name={paused ? 'play' : 'pause'} size={36} color={themes[theme].tintColor} />
+				: <CustomIcon name={paused ? 'play-filled' : 'pause-filled'} size={36} color={themes[theme].tintColor} />
 		}
 	</Touchable>
 ));
@@ -150,7 +150,7 @@ class MessageAudio extends React.Component {
 		if (nextState.paused !== paused) {
 			return true;
 		}
-		if (!equal(nextProps.file, file)) {
+		if (!dequal(nextProps.file, file)) {
 			return true;
 		}
 		if (nextState.loading !== loading) {

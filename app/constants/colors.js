@@ -2,12 +2,21 @@ export const STATUS_COLORS = {
 	online: '#2de0a5',
 	busy: '#f5455c',
 	away: '#ffd21f',
-	offline: '#cbced1'
+	offline: '#cbced1',
+	loading: '#9ea2a8'
 };
 
 export const SWITCH_TRACK_COLOR = {
 	false: '#f5455c',
 	true: '#2de0a5'
+};
+
+const mentions = {
+	unreadColor: '#6C727A',
+	tunreadColor: '#1d74f5',
+	mentionMeColor: '#F5455C',
+	mentionGroupColor: '#F38C39',
+	mentionOtherColor: '#F3BE08'
 };
 
 export const themes = {
@@ -27,7 +36,8 @@ export const themes = {
 		auxiliaryText: '#9ca2a8',
 		infoText: '#6d6d72',
 		tintColor: '#1d74f5',
-		auxiliaryTintColor: '#caced1',
+		tintActive: '#549df9',
+		auxiliaryTintColor: '#6C727A',
 		actionTintColor: '#1d74f5',
 		separatorColor: '#cbcbcc',
 		navbarBackground: '#ffffff',
@@ -53,7 +63,9 @@ export const themes = {
 		passcodeDotEmpty: '#CBCED1',
 		passcodeDotFull: '#6C727A',
 		previewBackground: '#1F2329',
-		previewTintColor: '#ffffff'
+		previewTintColor: '#ffffff',
+		backdropOpacity: 0.3,
+		...mentions
 	},
 	dark: {
 		backgroundColor: '#030b1b',
@@ -71,7 +83,8 @@ export const themes = {
 		auxiliaryText: '#9297a2',
 		infoText: '#6D6D72',
 		tintColor: '#1d74f5',
-		auxiliaryTintColor: '#cdcdcd',
+		tintActive: '#549df9',
+		auxiliaryTintColor: '#f9f9f9',
 		actionTintColor: '#1d74f5',
 		separatorColor: '#2b2b2d',
 		navbarBackground: '#0b182c',
@@ -97,7 +110,9 @@ export const themes = {
 		passcodeDotEmpty: '#CBCED1',
 		passcodeDotFull: '#6C727A',
 		previewBackground: '#030b1b',
-		previewTintColor: '#ffffff'
+		previewTintColor: '#ffffff',
+		backdropOpacity: 0.9,
+		...mentions
 	},
 	black: {
 		backgroundColor: '#000000',
@@ -115,7 +130,8 @@ export const themes = {
 		auxiliaryText: '#b2b8c6',
 		infoText: '#6d6d72',
 		tintColor: '#1e9bfe',
-		auxiliaryTintColor: '#cdcdcd',
+		tintActive: '#76b7fc',
+		auxiliaryTintColor: '#f9f9f9',
 		actionTintColor: '#1e9bfe',
 		separatorColor: '#272728',
 		navbarBackground: '#0d0d0d',
@@ -141,6 +157,8 @@ export const themes = {
 		passcodeDotEmpty: '#CBCED1',
 		passcodeDotFull: '#6C727A',
 		previewBackground: '#000000',
-		previewTintColor: '#ffffff'
+		previewTintColor: '#ffffff',
+		backdropOpacity: 0.9,
+		...mentions
 	}
 };

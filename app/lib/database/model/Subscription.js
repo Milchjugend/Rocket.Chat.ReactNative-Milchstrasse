@@ -4,8 +4,10 @@ import {
 } from '@nozbe/watermelondb/decorators';
 import { sanitizer } from '../utils';
 
+export const TABLE_NAME = 'subscriptions';
+
 export default class Subscription extends Model {
-	static table = 'subscriptions';
+	static table = TABLE_NAME;
 
 	static associations = {
 		messages: { type: 'has_many', foreignKey: 'rid' },
@@ -40,6 +42,14 @@ export default class Subscription extends Model {
 
 	@field('user_mentions') userMentions;
 
+	@field('group_mentions') groupMentions;
+
+	@json('tunread', sanitizer) tunread;
+
+	@json('tunread_user', sanitizer) tunreadUser;
+
+	@json('tunread_group', sanitizer) tunreadGroup;
+
 	@date('room_updated_at') roomUpdatedAt;
 
 	@field('ro') ro;
@@ -67,6 +77,8 @@ export default class Subscription extends Model {
 	@field('notifications') notifications;
 
 	@json('muted', sanitizer) muted;
+
+	@json('ignored', sanitizer) ignored;
 
 	@field('broadcast') broadcast;
 
@@ -107,4 +119,16 @@ export default class Subscription extends Model {
 	@json('livechat_data', sanitizer) livechatData;
 
 	@json('tags', sanitizer) tags;
+
+	@field('e2e_key') E2EKey;
+
+	@field('encrypted') encrypted;
+
+	@field('e2e_key_id') e2eKeyId;
+
+	@field('avatar_etag') avatarETag;
+
+	@field('team_id') teamId;
+
+	@field('team_main') teamMain;
 }

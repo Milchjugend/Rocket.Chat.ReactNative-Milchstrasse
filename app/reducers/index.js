@@ -16,6 +16,11 @@ import activeUsers from './activeUsers';
 import usersTyping from './usersTyping';
 import inviteLinks from './inviteLinks';
 import createDiscussion from './createDiscussion';
+import enterpriseModules from './enterpriseModules';
+import encryption from './encryption';
+import permissions from './permissions';
+
+import inquiry from '../ee/omnichannel/reducers/inquiry';
 
 export default combineReducers({
 	settings,
@@ -34,5 +39,9 @@ export default combineReducers({
 	activeUsers,
 	usersTyping,
 	inviteLinks,
-	createDiscussion
+	createDiscussion,
+	inquiry,
+	enterpriseModules,
+	encryption,
+	permissions
 });

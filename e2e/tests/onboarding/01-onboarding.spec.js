@@ -6,7 +6,7 @@ const data = require('../../data');
 describe('Onboarding', () => {
 	before(async() => {
 		await device.launchApp({ permissions: { notifications: 'YES' }, delete: true });
-		await waitFor(element(by.id('onboarding-view'))).toBeVisible().withTimeout(2000);
+		await waitFor(element(by.id('onboarding-view'))).toBeVisible().withTimeout(20000);
 	});
 
 	describe('Render', () => {
@@ -31,22 +31,18 @@ describe('Onboarding', () => {
 		it('should navigate to join a workspace', async() => {
 			await element(by.id('join-workspace')).tap();
 			await waitFor(element(by.id('new-server-view'))).toBeVisible().withTimeout(60000);
-			await expect(element(by.id('new-server-view'))).toBeVisible();
 		});
 
 		it('should enter an invalid server and get error', async() => {
-			await element(by.id('new-server-view-input')).replaceText('invalidtest');
-			await element(by.id('new-server-view-button')).tap();
+			await element(by.id('new-server-view-input')).typeText('invalidtest\n');
 			const errorText = 'Oops!';
 			await waitFor(element(by.text(errorText))).toBeVisible().withTimeout(60000);
-			await expect(element(by.text(errorText))).toBeVisible();
 			await element(by.text('OK')).tap();
 		});
 
 		it('should tap on "Join our open workspace" and navigate', async() => {
 			await element(by.id('new-server-view-open')).tap();
 			await waitFor(element(by.id('workspace-view'))).toBeVisible().withTimeout(60000);
-			await expect(element(by.id('workspace-view'))).toBeVisible();
 		});
 
 		it('should enter a valid server without login services and navigate to login', async() => {
@@ -54,10 +50,8 @@ describe('Onboarding', () => {
 			await waitFor(element(by.id('onboarding-view'))).toBeVisible().withTimeout(2000);
 			await element(by.id('join-workspace')).tap();
 			await waitFor(element(by.id('new-server-view'))).toBeVisible().withTimeout(60000);
-			await element(by.id('new-server-view-input')).replaceText(data.server);
-			await element(by.id('new-server-view-button')).tap();
+			await element(by.id('new-server-view-input')).typeText(`${data.server}\n`);
 			await waitFor(element(by.id('workspace-view'))).toBeVisible().withTimeout(60000);
-			await expect(element(by.id('workspace-view'))).toBeVisible();
 		});
 	});
 });

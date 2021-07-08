@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
-import _ from 'lodash';
+import { View, Text, InteractionManager } from 'react-native';
+import isEmpty from 'lodash/isEmpty';
 import PropTypes from 'prop-types';
 import { sha256 } from 'js-sha256';
 import Modal from 'react-native-modal';
@@ -47,7 +47,7 @@ const TwoFactor = React.memo(({ theme, isMasterDetail }) => {
 	const sendEmail = () => RocketChat.sendEmailCode();
 
 	useDeepCompareEffect(() => {
-		if (!_.isEmpty(data)) {
+		if (!isEmpty(data)) {
 			setCode('');
 			setVisible(true);
 		} else {
@@ -58,9 +58,9 @@ const TwoFactor = React.memo(({ theme, isMasterDetail }) => {
 	const showTwoFactor = args => setData(args);
 
 	useEffect(() => {
-		EventEmitter.addEventListener(TWO_FACTOR, showTwoFactor);
+		const listener = EventEmitter.addEventListener(TWO_FACTOR, showTwoFactor);
 
-		return () => EventEmitter.removeListener(TWO_FACTOR);
+		return () => EventEmitter.removeListener(TWO_FACTOR, listener);
 	}, []);
 
 	const onCancel = () => {
@@ -99,6 +99,7 @@ const TwoFactor = React.memo(({ theme, isMasterDetail }) => {
 					<TextInput
 						value={code}
 						theme={theme}
+						inputRef={e => InteractionManager.runAfterInteractions(() => e?.getNativeRef()?.focus())}
 						returnKeyType='send'
 						autoCapitalize='none'
 						onChangeText={setCode}

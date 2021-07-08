@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 import { toggleCrashReport as toggleCrashReportAction } from '../../actions/crashReport';
-import { CloseModalButton, DrawerButton } from '../../containers/HeaderButton';
+import * as HeaderButton from '../../containers/HeaderButton';
 import StatusBar from '../../containers/StatusBar';
 import BrowserView from '../../containers/BrowserView';
 import styles from './styles';
@@ -24,14 +24,17 @@ ItemInfo.propTypes = {
 };
 
 class CommunityView extends React.Component {
-	static navigationOptions = ({ navigation, isMasterDetail }) => ({
-		headerLeft: () => (isMasterDetail ? (
-			<CloseModalButton navigation={navigation} testID='settings-view-close' />
-		) : (
-			<DrawerButton navigation={navigation} />
-		)),
-		title: I18n.t('Community')
-	});
+	static navigationOptions = ({ navigation, isMasterDetail }) => {
+		const options = {
+			title: I18n.t('Community')
+		};
+		if (isMasterDetail) {
+			options.headerLeft = () => <HeaderButton.CloseModal navigation={navigation} testID='directory-view-close' />;
+		} else {
+			options.headerLeft = () => <HeaderButton.Drawer navigation={navigation} testID='directory-view-close' />;
+		}
+		return options;
+	}
 
 	static propTypes = {
 		theme: PropTypes.string

@@ -8,6 +8,9 @@ export const SMALL_SWIPE = ACTION_WIDTH / 2;
 export const LONG_SWIPE = ACTION_WIDTH * 3;
 
 export default StyleSheet.create({
+	flex: {
+		flex: 1
+	},
 	container: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -48,27 +51,8 @@ export default StyleSheet.create({
 	updateAlert: {
 		...sharedStyles.textSemibold
 	},
-	unreadNumberContainer: {
-		minWidth: 21,
-		height: 21,
-		paddingVertical: 3,
-		paddingHorizontal: 5,
-		borderRadius: 10.5,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginLeft: 10
-	},
-	unreadText: {
-		overflow: 'hidden',
-		fontSize: 13,
-		...sharedStyles.textMedium,
-		letterSpacing: 0.56,
-		textAlign: 'center'
-	},
 	status: {
-		marginLeft: 4,
-		marginRight: 7,
-		marginTop: 3
+		marginRight: 2
 	},
 	markdownText: {
 		flex: 1,
@@ -98,7 +82,8 @@ export default StyleSheet.create({
 		position: 'absolute',
 		height: ROW_HEIGHT,
 		justifyContent: 'center',
-		top: 0
+		top: 0,
+		right: 0
 	},
 	actionRightButtonContainer: {
 		position: 'absolute',
@@ -111,5 +96,16 @@ export default StyleSheet.create({
 		height: '100%',
 		alignItems: 'center',
 		justifyContent: 'center'
+	},
+	tagContainer: {
+		alignSelf: 'center',
+		alignItems: 'center',
+		borderRadius: 4,
+		marginHorizontal: 4
+	},
+	tagText: {
+		fontSize: 13,
+		paddingHorizontal: 4,
+		...sharedStyles.textSemibold
 	}
 });

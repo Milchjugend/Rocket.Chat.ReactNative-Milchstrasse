@@ -25,7 +25,6 @@ Who run the world? Queers!
   <img alt="Download von App Store" src="https://user-images.githubusercontent.com/7317008/43209852-4ca39622-904b-11e8-8ce1-cdc3aee76ae9.png" height=43>
 </a>
 
-
 ## Eigene App für Milchstrasse erstellen
 
 Follow the [React Native Getting Started Guide](https://facebook.github.io/react-native/docs/getting-started.html) for detailed instructions on setting up your local machine for development.
@@ -82,3 +81,19 @@ AppRegistry.registerComponent(appName, () => App);
 ```
 
 - Start your application again
+
+
+
+## Contributing
+
+Are you a dev and would like to help? Found a bug that you would like to report or a missing feature that you would like to work on? Great! We have written down a [Contribution guide](https://github.com/RocketChat/Rocket.Chat.ReactNative/blob/develop/CONTRIBUTING.md) so you can start easily.
+
+## Whitelabel
+Do you want to make the app run on your own server only? [Follow our whitelabel documentation.](https://docs.rocket.chat/guides/developer/mobile-apps/whitelabeling-mobile-apps)
+
+## Engage with us
+### Share your story
+We’d love to hear about [your experience](https://survey.zohopublic.com/zs/e4BUFG) and potentially feature it on our [blog](https://rocket.chat/case-studies/?utm_source=github&utm_medium=readme&utm_campaign=community).
+
+### Subscribe for Updates
+Once a month our marketing team releases an email update with news about product releases, company related topics, events and use cases. [Sign up!](https://rocket.chat/newsletter/?utm_source=github&utm_medium=readme&utm_campaign=community)

@@ -4,34 +4,25 @@ import {
 	ScrollView, Text, View, TouchableWithoutFeedback
 } from 'react-native';
 import { connect } from 'react-redux';
-import { Q } from '@nozbe/watermelondb';
-
+import { dequal } from 'dequal';
 import Avatar from '../../containers/Avatar';
 import Status from '../../containers/Status/Status';
-import log from '../../utils/log';
+import { logEvent, events } from '../../utils/log';
 import I18n from '../../i18n';
 import scrollPersistTaps from '../../utils/scrollPersistTaps';
 import { CustomIcon } from '../../lib/Icons';
 import styles from './styles';
 import SidebarItem from './SidebarItem';
 import { themes } from '../../constants/colors';
-import database from '../../lib/database';
 import { withTheme } from '../../theme';
 import { getUserSelector } from '../../selectors/login';
-import Navigation from '../../lib/Navigation';
 import SafeAreaView from '../../containers/SafeAreaView';
+import Navigation from '../../lib/Navigation';
 
 const Separator = React.memo(({ theme }) => <View style={[styles.separator, { borderColor: themes[theme].separatorColor }]} />);
 Separator.propTypes = {
 	theme: PropTypes.string
 };
-
-const permissions = [
-	'view-statistics',
-	'view-room-administration',
-	'view-user-administration',
-	'view-privileged-setting'
-];
 
 class Sidebar extends Component {
 	static propTypes = {
@@ -44,32 +35,24 @@ class Sidebar extends Component {
 		loadingServer: PropTypes.bool,
 		useRealName: PropTypes.bool,
 		allowStatusMessage: PropTypes.bool,
-		isMasterDetail: PropTypes.bool
+		isMasterDetail: PropTypes.bool,
+		viewStatisticsPermission: PropTypes.object,
+		viewRoomAdministrationPermission: PropTypes.object,
+		viewUserAdministrationPermission: PropTypes.object,
+		viewPrivilegedSettingPermission: PropTypes.object
 	}
 
 	constructor(props) {
 		super(props);
 		this.state = {
-			showStatus: false,
-			isAdmin: false
+			showStatus: false
 		};
-	}
-
-	componentDidMount() {
-		this.setIsAdmin();
-	}
-
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		const { loadingServer } = this.props;
-		if (loadingServer && nextProps.loadingServer !== loadingServer) {
-			this.setIsAdmin();
-		}
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
 		const { showStatus, isAdmin } = this.state;
 		const {
-			Site_Name, user, baseUrl, state, isMasterDetail, useRealName, theme
+			Site_Name, user, baseUrl, state, isMasterDetail, useRealName, theme, viewStatisticsPermission, viewRoomAdministrationPermission, viewUserAdministrationPermission, viewPrivilegedSettingPermission
 		} = this.props;
 		// Drawer navigation state
 		if (state?.index !== nextProps.state?.index) {
@@ -90,19 +73,8 @@ class Sidebar extends Component {
 		if (nextProps.theme !== theme) {
 			return true;
 		}
-		if (nextProps.user && user) {
-			if (nextProps.user.language !== user.language) {
-				return true;
-			}
-			if (nextProps.user.status !== user.status) {
-				return true;
-			}
-			if (nextProps.user.username !== user.username) {
-				return true;
-			}
-			if (nextProps.user.statusText !== user.statusText) {
-				return true;
-			}
+		if (!dequal(nextProps.user, user)) {
+			return true;
 		}
 		if (nextProps.isMasterDetail !== isMasterDetail) {
 			return true;
@@ -113,25 +85,42 @@ class Sidebar extends Component {
 		if (nextState.isAdmin !== isAdmin) {
 			return true;
 		}
+		if (!dequal(nextProps.viewStatisticsPermission, viewStatisticsPermission)) {
+			return true;
+		}
+		if (!dequal(nextProps.viewRoomAdministrationPermission, viewRoomAdministrationPermission)) {
+			return true;
+		}
+		if (!dequal(nextProps.viewUserAdministrationPermission, viewUserAdministrationPermission)) {
+			return true;
+		}
+		if (!dequal(nextProps.viewPrivilegedSettingPermission, viewPrivilegedSettingPermission)) {
+			return true;
+		}
 		return false;
 	}
 
-	async setIsAdmin() {
-		const db = database.active;
-		const { user } = this.props;
+
+	getIsAdmin() {
+		const {
+			user, viewStatisticsPermission, viewRoomAdministrationPermission, viewUserAdministrationPermission, viewPrivilegedSettingPermission
+		} = this.props;
 		const { roles } = user;
-		try {
-			if	(roles) {
-				const permissionsCollection = db.collections.get('permissions');
-				const permissionsFiltered = await permissionsCollection.query(Q.where('id', Q.oneOf(permissions))).fetch();
-				const isAdmin = permissionsFiltered.reduce((result, permission) => (
-					result || permission.roles.some(r => roles.indexOf(r) !== -1)),
-				false);
-				this.setState({ isAdmin });
-			}
-		} catch (e) {
-			log(e);
+		const allPermissions = [viewStatisticsPermission, viewRoomAdministrationPermission, viewUserAdministrationPermission, viewPrivilegedSettingPermission];
+		let isAdmin = false;
+
+		if	(roles) {
+			isAdmin = allPermissions.reduce((result, permission) => {
+				if (permission) {
+					return (
+						result || permission.some(r => roles.indexOf(r) !== -1)
+					);
+				}
+				return result;
+			},
+			false);
 		}
+		return isAdmin;
 	}
 
 	onPressCommunityProfile = () => {
@@ -150,8 +139,8 @@ class Sidebar extends Component {
 	}
 
 	sidebarNavigate = (route) => {
-		const { navigation } = this.props;
-		navigation.navigate(route);
+		logEvent(events[`SIDEBAR_GO_${ route.replace('StackNavigator', '').replace('View', '').toUpperCase() }`]);
+		Navigation.navigate(route);
 	}
 
 	get currentItemKey() {
@@ -168,9 +157,8 @@ class Sidebar extends Component {
 	}
 
 	renderAdmin = () => {
-		const { isAdmin } = this.state;
 		const { theme, isMasterDetail } = this.props;
-		if (!isAdmin) {
+		if (!this.getIsAdmin()) {
 			return null;
 		}
 		const routeName = isMasterDetail ? 'AdminPanelView' : 'AdminPanelStackNavigator';
@@ -179,8 +167,8 @@ class Sidebar extends Component {
 				<Separator theme={theme} />
 				<SidebarItem
 					text={I18n.t('Admin_Panel')}
-					left={<CustomIcon name='shield' size={20} color={themes[theme].titleText} />}
-					onPress={() => Navigation.navigate(routeName)}
+					left={<CustomIcon name='settings' size={20} color={themes[theme].titleText} />}
+					onPress={() => this.sidebarNavigate(routeName)}
 					testID='sidebar-settings'
 					current={this.currentItemKey === routeName}
 				/>
@@ -201,7 +189,7 @@ class Sidebar extends Component {
 				/>
 				<SidebarItem
 					text={I18n.t('Channel_Directory')}
-					left={<CustomIcon name='hash' size={20} color={themes[theme].titleText} />}
+					left={<CustomIcon name='channel-public' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('DirectoryView')}
 					testID='sidebar-channels'
 					current={this.currentItemKey === 'ChannelDirectoryStack'}
@@ -228,15 +216,8 @@ class Sidebar extends Component {
 					current={this.currentItemKey === 'AgendaStackNavigator'}
 				/>
 				<SidebarItem
-					text={I18n.t('Chat_Profile_Image')}
-					left={<CustomIcon name='user' size={20} color={themes[theme].titleText} />}
-					onPress={() => this.sidebarNavigate('ProfileStackNavigator')}
-					testID='sidebar-profile'
-					current={this.currentItemKey === 'ProfileStackNavigator'}
-				/>
-				<SidebarItem
 					text={I18n.t('Settings')}
-					left={<CustomIcon name='cog' size={20} color={themes[theme].titleText} />}
+					left={<CustomIcon name='administration' size={20} color={themes[theme].titleText} />}
 					onPress={() => this.sidebarNavigate('SettingsStackNavigator')}
 					testID='sidebar-settings'
 					current={this.currentItemKey === 'SettingsStackNavigator'}
@@ -251,9 +232,9 @@ class Sidebar extends Component {
 		return (
 			<SidebarItem
 				text={user.statusText || I18n.t('Edit_Status')}
-				left={<Status style={styles.status} size={12} status={user && user.status} />}
+				left={<Status size={24} status={user?.status} />}
 				right={<CustomIcon name='edit' size={20} color={themes[theme].titleText} />}
-				onPress={() => Navigation.navigate('StatusView')}
+				onPress={() => this.sidebarNavigate('StatusView')}
 				testID='sidebar-custom-status'
 			/>
 		);
@@ -264,14 +245,11 @@ class Sidebar extends Component {
 			user, Site_Name, baseUrl, useRealName, allowStatusMessage, isMasterDetail, theme
 		} = this.props;
 
-		const date = new Date();
-		const timestamp = date.getTime();
-
 		if (!user) {
 			return null;
 		}
 		return (
-			<SafeAreaView testID='sidebar-view' style={{ backgroundColor: themes[theme].focusedBackground }} vertical={isMasterDetail} theme={theme}>
+			<SafeAreaView testID='sidebar-view' style={{ backgroundColor: themes[theme].focusedBackground }} vertical={isMasterDetail}>
 				<ScrollView
 					style={[
 						styles.container,
@@ -287,12 +265,8 @@ class Sidebar extends Component {
 						<View style={styles.header} theme={theme}>
 							<Avatar
 								text={user.username}
-								size={30}
 								style={styles.avatar}
-								baseUrl={baseUrl}
-								userId={user.id}
-								token={user.token}
-								forceReload={timestamp}
+								size={30}
 							/>
 							<View style={styles.headerTextContainer}>
 								<View style={styles.headerUsername}>
@@ -335,7 +309,11 @@ const mapStateToProps = state => ({
 	loadingServer: state.server.loading,
 	useRealName: state.settings.UI_Use_Real_Name,
 	allowStatusMessage: state.settings.Accounts_AllowUserStatusMessageChange,
-	isMasterDetail: state.app.isMasterDetail
+	isMasterDetail: state.app.isMasterDetail,
+	viewStatisticsPermission: state.permissions['view-statistics'],
+	viewRoomAdministrationPermission: state.permissions['view-room-administration'],
+	viewUserAdministrationPermission: state.permissions['view-user-administration'],
+	viewPrivilegedSettingPermission: state.permissions['view-privileged-setting']
 });
 
 export default connect(mapStateToProps)(withTheme(Sidebar));

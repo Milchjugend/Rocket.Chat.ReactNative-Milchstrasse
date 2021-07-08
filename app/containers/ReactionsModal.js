@@ -23,9 +23,9 @@ const styles = StyleSheet.create({
 		paddingVertical: 10
 	},
 	title: {
-		textAlign: 'center',
 		fontSize: 16,
-		...sharedStyles.textSemibold
+		...sharedStyles.textSemibold,
+		...sharedStyles.textAlignCenter
 	},
 	reactCount: {
 		fontSize: 13,
@@ -99,12 +99,12 @@ const ModalContent = React.memo(({
 }) => {
 	if (message && message.reactions) {
 		return (
-			<SafeAreaView theme={props.theme} style={styles.safeArea}>
+			<SafeAreaView style={styles.safeArea}>
 				<Touchable onPress={onClose}>
 					<View style={styles.titleContainer}>
 						<CustomIcon
 							style={[styles.closeButton, { color: themes[props.theme].buttonText }]}
-							name='Cross'
+							name='close'
 							size={20}
 						/>
 						<Text style={[styles.title, { color: themes[props.theme].buttonText }]}>{I18n.t('Reactions')}</Text>

@@ -37,7 +37,6 @@ class BrowserView extends React.Component {
 		return (
 			<>
 				<WebView
-					onLoadStart={() => (this.showSpinner())}
 					onLoad={() => this.hideSpinner()}
 					source={{ uri: url }}
 					ref={this.webview}
@@ -57,6 +56,7 @@ class BrowserView extends React.Component {
 							alignItems: 'center',
 							justifyContent: 'center'
 						}}
+						color='gray'
 						size='large'
 					/>
 				)}

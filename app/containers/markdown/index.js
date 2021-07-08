@@ -79,10 +79,12 @@ class Markdown extends PureComponent {
 		channels: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
 		mentions: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
 		navToRoomInfo: PropTypes.func,
+		navToRoomPreview: PropTypes.func,
 		preview: PropTypes.bool,
 		theme: PropTypes.string,
 		testID: PropTypes.string,
-		style: PropTypes.array
+		style: PropTypes.array,
+		onLinkPress: PropTypes.func
 	};
 
 	constructor(props) {
@@ -211,18 +213,19 @@ class Markdown extends PureComponent {
 			return null;
 		}
 		return (
-			<Text style={[style, { color: themes[theme].bodyText }]} numberOfLines={numberOfLines}>
+			<Text style={[styles.text, style, { color: themes[theme].bodyText }]} numberOfLines={numberOfLines}>
 				{children}
 			</Text>
 		);
 	};
 
 	renderLink = ({ children, href }) => {
-		const { theme } = this.props;
+		const { theme, onLinkPress } = this.props;
 		return (
 			<MarkdownLink
 				link={href}
 				theme={theme}
+				onLinkPress={onLinkPress}
 			>
 				{children}
 			</MarkdownLink>
@@ -231,13 +234,13 @@ class Markdown extends PureComponent {
 
 	renderHashtag = ({ hashtag }) => {
 		const {
-			channels, navToRoomInfo, style, theme
+			channels, navToRoomPreview, style, theme
 		} = this.props;
 		return (
 			<MarkdownHashtag
 				hashtag={hashtag}
 				channels={channels}
-				navToRoomInfo={navToRoomInfo}
+				navToRoomPreview={navToRoomPreview}
 				theme={theme}
 				style={style}
 			/>
@@ -380,12 +383,14 @@ class Markdown extends PureComponent {
 
 		// Ex: '[ ](https://open.rocket.chat/group/test?msg=abcdef)  Test'
 		// Return: 'Test'
-		m = m.replace(/^\[([\s]]*)\]\(([^)]*)\)\s/, '').trim();
+		m = m.replace(/^\[([\s]*)\]\(([^)]*)\)\s/, '').trim();
 
 		if (preview) {
-			m = m.replace(/\n+/g, ' ');
 			m = shortnameToUnicode(m);
+			// Removes sequential empty spaces
+			m = m.replace(/\s+/g, ' ');
 			m = removeMarkdown(m);
+			m = m.replace(/\n+/g, ' ');
 			return (
 				<Text accessibilityLabel={m} style={[styles.text, { color: themes[theme].bodyText }, ...style]} numberOfLines={numberOfLines} testID={testID}>
 					{m}

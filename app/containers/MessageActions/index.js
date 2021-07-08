@@ -7,7 +7,7 @@ import moment from 'moment';
 import RocketChat from '../../lib/rocketchat';
 import database from '../../lib/database';
 import I18n from '../../i18n';
-import log from '../../utils/log';
+import log, { logEvent } from '../../utils/log';
 import Navigation from '../../lib/Navigation';
 import { getMessageTranslation } from '../message/utils';
 import { LISTENER } from '../Toast';
@@ -15,6 +15,7 @@ import EventEmitter from '../../utils/events';
 import { showConfirmationAlert } from '../../utils/info';
 import { useActionSheet } from '../ActionSheet';
 import Header, { HEADER_HEIGHT } from './Header';
+import events from '../../utils/log/events';
 
 const MessageActions = React.memo(forwardRef(({
 	room,
@@ -33,20 +34,24 @@ const MessageActions = React.memo(forwardRef(({
 	Message_AllowPinning,
 	Message_AllowStarring,
 	Message_Read_Receipt_Store_Users,
-	isMasterDetail
+	isMasterDetail,
+	editMessagePermission,
+	deleteMessagePermission,
+	forceDeleteMessagePermission,
+	pinMessagePermission
 }, ref) => {
 	let permissions = {};
 	const { showActionSheet, hideActionSheet } = useActionSheet();
 
 	const getPermissions = async() => {
 		try {
-			const permission = ['edit-message', 'delete-message', 'force-delete-message', 'pin-message'];
+			const permission = [editMessagePermission, deleteMessagePermission, forceDeleteMessagePermission, pinMessagePermission];
 			const result = await RocketChat.hasPermission(permission, room.rid);
 			permissions = {
-				hasEditPermission: result[permission[0]],
-				hasDeletePermission: result[permission[1]],
-				hasForceDeletePermission: result[permission[2]],
-				hasPinPermission: result[permission[3]]
+				hasEditPermission: result[0],
+				hasDeletePermission: result[1],
+				hasForceDeletePermission: result[2],
+				hasPinPermission: result[3]
 			};
 		} catch {
 			// Do nothing
@@ -112,11 +117,18 @@ const MessageActions = React.memo(forwardRef(({
 
 	const getPermalink = message => RocketChat.getPermalinkMessage(message);
 
-	const handleReply = message => replyInit(message, true);
+	const handleReply = (message) => {
+		logEvent(events.ROOM_MSG_ACTION_REPLY);
+		replyInit(message, true);
+	};
 
-	const handleEdit = message => editInit(message);
+	const handleEdit = (message) => {
+		logEvent(events.ROOM_MSG_ACTION_EDIT);
+		editInit(message);
+	};
 
 	const handleCreateDiscussion = (message) => {
+		logEvent(events.ROOM_MSG_ACTION_DISCUSSION);
 		const params = { message, channel: room, showCloseModal: true };
 		if (isMasterDetail) {
 			Navigation.navigate('ModalStackNavigator', { screen: 'CreateDiscussionView', params });
@@ -126,13 +138,14 @@ const MessageActions = React.memo(forwardRef(({
 	};
 
 	const handleUnread = async(message) => {
+		logEvent(events.ROOM_MSG_ACTION_UNREAD);
 		const { id: messageId, ts } = message;
 		const { rid } = room;
 		try {
 			const db = database.active;
 			const result = await RocketChat.markAsUnread({ messageId });
 			if (result.success) {
-				const subCollection = db.collections.get('subscriptions');
+				const subCollection = db.get('subscriptions');
 				const subRecord = await subCollection.find(rid);
 				await db.action(async() => {
 					try {
@@ -144,54 +157,66 @@ const MessageActions = React.memo(forwardRef(({
 				Navigation.navigate('RoomsListView');
 			}
 		} catch (e) {
+			logEvent(events.ROOM_MSG_ACTION_UNREAD_F);
 			log(e);
 		}
 	};
 
 	const handlePermalink = async(message) => {
+		logEvent(events.ROOM_MSG_ACTION_PERMALINK);
 		try {
 			const permalink = await getPermalink(message);
 			Clipboard.setString(permalink);
 			EventEmitter.emit(LISTENER, { message: I18n.t('Permalink_copied_to_clipboard') });
 		} catch {
-			// Do nothing
+			logEvent(events.ROOM_MSG_ACTION_PERMALINK_F);
 		}
 	};
 
 	const handleCopy = async(message) => {
-		await Clipboard.setString(message.msg);
+		logEvent(events.ROOM_MSG_ACTION_COPY);
+		await Clipboard.setString(message?.attachments?.[0]?.description || message.msg);
 		EventEmitter.emit(LISTENER, { message: I18n.t('Copied_to_clipboard') });
 	};
 
 	const handleShare = async(message) => {
+		logEvent(events.ROOM_MSG_ACTION_SHARE);
 		try {
 			const permalink = await getPermalink(message);
 			Share.share({ message: permalink });
 		} catch {
-			// Do nothing
+			logEvent(events.ROOM_MSG_ACTION_SHARE_F);
 		}
 	};
 
-	const handleQuote = message => replyInit(message, false);
+	const handleQuote = (message) => {
+		logEvent(events.ROOM_MSG_ACTION_QUOTE);
+		replyInit(message, false);
+	};
 
 	const handleStar = async(message) => {
+		logEvent(message.starred ? events.ROOM_MSG_ACTION_UNSTAR : events.ROOM_MSG_ACTION_STAR);
 		try {
 			await RocketChat.toggleStarMessage(message.id, message.starred);
 			EventEmitter.emit(LISTENER, { message: message.starred ? I18n.t('Message_unstarred') : I18n.t('Message_starred') });
 		} catch (e) {
+			logEvent(events.ROOM_MSG_ACTION_STAR_F);
 			log(e);
 		}
 	};
 
 	const handlePin = async(message) => {
+		logEvent(events.ROOM_MSG_ACTION_PIN);
 		try {
 			await RocketChat.togglePinMessage(message.id, message.pinned);
 		} catch (e) {
+			logEvent(events.ROOM_MSG_ACTION_PIN_F);
 			log(e);
 		}
 	};
 
 	const handleReaction = (shortname, message) => {
+		logEvent(events.ROOM_MSG_ACTION_REACTION);
 		if (shortname) {
 			onReactionPress(shortname, message.id);
 		} else {
@@ -201,7 +226,13 @@ const MessageActions = React.memo(forwardRef(({
 		hideActionSheet();
 	};
 
-	const handleReadReceipt = message => Navigation.navigate('ReadReceiptsView', { messageId: message.id });
+	const handleReadReceipt = (message) => {
+		if (isMasterDetail) {
+			Navigation.navigate('ModalStackNavigator', { screen: 'ReadReceiptsView', params: { messageId: message.id } });
+		} else {
+			Navigation.navigate('ReadReceiptsView', { messageId: message.id });
+		}
+	};
 
 	const handleToggleTranslation = async(message) => {
 		try {
@@ -228,10 +259,12 @@ const MessageActions = React.memo(forwardRef(({
 	};
 
 	const handleReport = async(message) => {
+		logEvent(events.ROOM_MSG_ACTION_REPORT);
 		try {
 			await RocketChat.reportMessage(message.id);
 			Alert.alert(I18n.t('Message_Reported'));
 		} catch (e) {
+			logEvent(events.ROOM_MSG_ACTION_REPORT_F);
 			log(e);
 		}
 	};
@@ -239,11 +272,13 @@ const MessageActions = React.memo(forwardRef(({
 	const handleDelete = (message) => {
 		showConfirmationAlert({
 			message: I18n.t('You_will_not_be_able_to_recover_this_message'),
-			callToAction: I18n.t('Delete'),
+			confirmationText: I18n.t('Delete'),
 			onPress: async() => {
 				try {
+					logEvent(events.ROOM_MSG_ACTION_DELETE);
 					await RocketChat.deleteMessage(message.id, message.subscription.id);
 				} catch (e) {
+					logEvent(events.ROOM_MSG_ACTION_DELETE_F);
 					log(e);
 				}
 			}
@@ -290,7 +325,7 @@ const MessageActions = React.memo(forwardRef(({
 		// Create Discussion
 		options.push({
 			title: I18n.t('Start_a_Discussion'),
-			icon: 'chat',
+			icon: 'discussions',
 			onPress: () => handleCreateDiscussion(message)
 		});
 
@@ -365,7 +400,7 @@ const MessageActions = React.memo(forwardRef(({
 		if (allowDelete(message)) {
 			options.push({
 				title: I18n.t('Delete'),
-				icon: 'trash',
+				icon: 'delete',
 				danger: true,
 				onPress: () => handleDelete(message)
 			});
@@ -375,6 +410,7 @@ const MessageActions = React.memo(forwardRef(({
 	};
 
 	const showMessageActions = async(message) => {
+		logEvent(events.ROOM_SHOW_MSG_ACTIONS);
 		await getPermissions();
 		showActionSheet({
 			options: getOptions(message),
@@ -408,7 +444,11 @@ MessageActions.propTypes = {
 	Message_AllowPinning: PropTypes.bool,
 	Message_AllowStarring: PropTypes.bool,
 	Message_Read_Receipt_Store_Users: PropTypes.bool,
-	server: PropTypes.string
+	server: PropTypes.string,
+	editMessagePermission: PropTypes.array,
+	deleteMessagePermission: PropTypes.array,
+	forceDeleteMessagePermission: PropTypes.array,
+	pinMessagePermission: PropTypes.array
 };
 
 const mapStateToProps = state => ({
@@ -420,7 +460,11 @@ const mapStateToProps = state => ({
 	Message_AllowPinning: state.settings.Message_AllowPinning,
 	Message_AllowStarring: state.settings.Message_AllowStarring,
 	Message_Read_Receipt_Store_Users: state.settings.Message_Read_Receipt_Store_Users,
-	isMasterDetail: state.app.isMasterDetail
+	isMasterDetail: state.app.isMasterDetail,
+	editMessagePermission: state.permissions['edit-message'],
+	deleteMessagePermission: state.permissions['delete-message'],
+	forceDeleteMessagePermission: state.permissions['force-delete-message'],
+	pinMessagePermission: state.permissions['pin-message']
 });
 
 export default connect(mapStateToProps, null, null, { forwardRef: true })(MessageActions);
