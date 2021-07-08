@@ -1,30 +1,88 @@
-# Rocket.Chat Mobile
+# Milchstrasse
 
-[![Project Dependencies](https://david-dm.org/RocketChat/Rocket.Chat.ReactNative.svg)](https://david-dm.org/RocketChat/Rocket.Chat.ReactNative)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bb15e2392a71473ea59d3f634f35c54e)](https://www.codacy.com/app/RocketChat/Rocket.Chat.ReactNative?utm_source=github.com&utm_medium=referral&utm_content=RocketChat/Rocket.Chat.ReactNative&utm_campaign=badger)
-[![codecov](https://codecov.io/gh/RocketChat/Rocket.Chat.ReactNative/branch/master/graph/badge.svg)](https://codecov.io/gh/RocketChat/Rocket.Chat.ReactNative)
-[![CodeFactor](https://www.codefactor.io/repository/github/rocketchat/rocket.chat.reactnative/badge)](https://www.codefactor.io/repository/github/rocketchat/rocket.chat.reactnative)
+Komm mit uns auf eine Reise zur Milchstrasse – von deiner Milchjugend.
 
-- **Supported server versions:** 0.70.0+
-- **Supported iOS versions**: 11+
-- **Supported Android versions**: 6.0+
+In der Milchstrasse App findest Du lesbische, schwule, bi, trans, inter und ace Queers in deinem Alter und alle dazwischen und ausserhalb. Hier tummelt sich deine Community – sei ein Teil davon und starte durch im queeren Universum.
+
+Auf der Milchstrasse kannst Du
+• ein Profil anlegen und deiner Community zeigen, wer Du bist und was Dich interessiert.
+• Dich mit deinen Freund*innen in Chats verbinden und neue Leute kennen lernen. Du kannst auch bestehenden Gruppenchats beitreten oder eigene gründen.
+• eine queere Veranstaltung planen. Sei es ein queerer Lesenachmittag oder eine spontane Party – mit der Milchstrasse wissen deine Freund*innen immer, was läuft.
+• Dir die queere Agenda anschauen und im dazugehörigen Chat Leute treffen die an die gleichen Events gehen wie du.
+
+Tritt ein in unser queeres Universum und werde Teil der Milchstrasse. Mach Dir jetzt dein Profil und starte durch!
+
+Who run the world? Queers!
+
 
 ## Download
 
-<a href="https://play.google.com/store/apps/details?id=chat.rocket.android">
-  <img alt="Download on Google Play" src="https://play.google.com/intl/en_us/badges/images/badge_new.png" height=43>
+### Milchstrasse Apps für Android und iOS
+<a href="https://play.google.com/store/apps/details?id=ch.milchjugend.milchstrasse">
+  <img alt="Download von Google Play" src="https://play.google.com/intl/en_us/badges/images/badge_new.png" height=43>
 </a>
-<a href="https://apps.apple.com/us/app/rocket-chat/id1148741252">
-  <img alt="Download on App Store" src="https://user-images.githubusercontent.com/7317008/43209852-4ca39622-904b-11e8-8ce1-cdc3aee76ae9.png" height=43>
+<a href="https://apps.apple.com/ch/app/milchstrasse/id1490430747">
+  <img alt="Download von App Store" src="https://user-images.githubusercontent.com/7317008/43209852-4ca39622-904b-11e8-8ce1-cdc3aee76ae9.png" height=43>
 </a>
 
-Check [our docs](https://docs.rocket.chat/installation/mobile-and-desktop-apps#mobile-apps) for  beta and Experimental versions.
+## Eigene App für Milchstrasse erstellen
 
-## Reporting an Issue
+Follow the [React Native Getting Started Guide](https://facebook.github.io/react-native/docs/getting-started.html) for detailed instructions on setting up your local machine for development.
 
-[Github Issues](https://github.com/RocketChat/Rocket.Chat.ReactNative/issues) are used to track todos, bugs, feature requests, and more.
+## How to run
+- Clone repository and install dependencies:
+    ```bash
+    $ git clone git@github.com:RocketChat/Rocket.Chat.ReactNative.git
+    $ cd Rocket.Chat.ReactNative
+    $ yarn
+    ```
 
-Also check the [#react-native](https://open.rocket.chat/channel/react-native) community on [open.rocket.chat](https://open.rocket.chat). We'd like to help.
+- Run application
+    ```bash
+    $ npx react-native run-ios
+    ```
+    ```bash
+    $ npx react-native run-android
+    ```
+
+
+## Detox (end-to-end tests)
+- Build your app
+
+```bash
+$ npx detox build --configuration ios.sim.release
+```
+
+- Run tests
+
+```bash
+$ npx detox test ./e2e/tests/onboarding --configuration ios.sim.release
+$ npx detox test ./e2e/tests/room --configuration ios.sim.release
+$ npx detox test ./e2e/tests/assorted --configuration ios.sim.release
+```
+
+## Storybook
+- Open index.js
+
+- Uncomment following line
+
+```bash
+import './storybook';
+```
+
+- Comment out following lines
+```bash
+import './app/ReactotronConfig';
+import { AppRegistry } from 'react-native';
+import App from './app/index';
+import { name as appName } from './app.json';
+
+AppRegistry.registerComponent(appName, () => App);
+```
+
+- Start your application again
+
+
 
 ## Contributing
 
